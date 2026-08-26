@@ -1,0 +1,380 @@
+{
+  "intents": [
+    {
+      "tag": "greeting",
+      "patterns": [
+        "hello",
+        "hi",
+        "hey",
+        "hello ingres",
+        "hi ingres",
+        "good morning",
+        "good afternoon",
+        "good evening",
+        "hey there",
+        "can you help me"
+      ],
+      "responses": [
+        "Hello! Welcome to the INGRES AI Virtual Assistant. How can I help you?",
+        "Hi! I am the INGRES virtual assistant. What would you like to know about groundwater resources?"
+      ]
+    },
+
+    {
+      "tag": "goodbye",
+      "patterns": [
+        "bye",
+        "goodbye",
+        "see you",
+        "see you later",
+        "talk to you later",
+        "exit",
+        "thank you bye"
+      ],
+      "responses": [
+        "Goodbye! Have a great day.",
+        "Thank you for using the INGRES AI Virtual Assistant. See you again!"
+      ]
+    },
+
+    {
+      "tag": "thanks",
+      "patterns": [
+        "thank you",
+        "thanks",
+        "thank you so much",
+        "thanks for helping me",
+        "i appreciate your help",
+        "thanks ingres"
+      ],
+      "responses": [
+        "You're welcome!",
+        "Happy to help!",
+        "It's my pleasure to assist you."
+      ]
+    },
+
+    {
+      "tag": "about_ingres",
+      "patterns": [
+        "what is ingres",
+        "what is INGRES",
+        "tell me about ingres",
+        "what does ingres mean",
+        "what is the ingres system",
+        "what is india groundwater resource estimation system",
+        "what is india ground water resource estimation system",
+        "explain ingres",
+        "tell me about the ingres portal",
+        "what is the purpose of ingres",
+        "why is ingres used",
+        "how does ingres help",
+        "what is ingres used for"
+      ],
+      "responses": [
+        "INGRES stands for India-Ground Water Resource Estimation System. It is used for groundwater resource assessment and related information.",
+        "INGRES is a groundwater resource estimation system that provides information related to groundwater-resource assessment in India."
+      ]
+    },
+
+    {
+      "tag": "groundwater",
+      "patterns": [
+        "what is groundwater",
+        "what is ground water",
+        "tell me about groundwater",
+        "explain groundwater",
+        "what does groundwater mean",
+        "why is groundwater important",
+        "why is ground water important",
+        "how is groundwater used",
+        "where does groundwater come from"
+      ],
+      "responses": [
+        "Groundwater is water stored beneath the Earth's surface in soil and rock formations. It is an important source of water for domestic, agricultural, and other uses.",
+        "Groundwater is water found below the ground in aquifers and geological formations."
+      ]
+    },
+
+    {
+      "tag": "groundwater_assessment",
+      "patterns": [
+        "what is groundwater assessment",
+        "what is ground water assessment",
+        "how is groundwater assessed",
+        "how is groundwater resource assessed",
+        "tell me about groundwater assessment",
+        "what does groundwater assessment mean",
+        "how does ingres assess groundwater",
+        "what is resource assessment"
+      ],
+      "responses": [
+        "Groundwater resource assessment estimates the availability and use of groundwater resources for an assessment unit.",
+        "INGRES is designed to provide groundwater-resource assessment information, including important resource and extraction indicators."
+      ]
+    },
+
+    {
+      "tag": "recharge",
+      "patterns": [
+        "what is groundwater recharge",
+        "what is ground water recharge",
+        "what is recharge",
+        "how does groundwater recharge happen",
+        "explain groundwater recharge",
+        "tell me about groundwater recharge",
+        "what is annual groundwater recharge",
+        "how is groundwater recharged"
+      ],
+      "responses": [
+        "Groundwater recharge is the process by which water enters and replenishes underground aquifers.",
+        "Annual groundwater recharge represents the amount of water estimated to replenish groundwater resources during an assessment period."
+      ]
+    },
+
+    {
+      "tag": "extractable_resource",
+      "patterns": [
+        "what is extractable groundwater resource",
+        "what are extractable resources",
+        "what is extractable resource",
+        "explain extractable groundwater",
+        "tell me about extractable resources",
+        "what does extractable groundwater mean",
+        "how is extractable resource calculated"
+      ],
+      "responses": [
+        "Extractable groundwater resource refers to the portion of groundwater resources considered available for extraction after accounting for relevant assessment factors.",
+        "INGRES provides information related to extractable groundwater resources as part of groundwater-resource assessment."
+      ]
+    },
+
+    {
+      "tag": "groundwater_extraction",
+      "patterns": [
+        "what is groundwater extraction",
+        "what is ground water extraction",
+        "what does groundwater extraction mean",
+        "explain groundwater extraction",
+        "how much groundwater is extracted",
+        "tell me about groundwater extraction",
+        "what is total groundwater extraction",
+        "how is groundwater extraction measured"
+      ],
+      "responses": [
+        "Groundwater extraction refers to the amount of groundwater withdrawn for different uses such as irrigation, domestic use, and industry.",
+        "Groundwater extraction is an important indicator used in groundwater-resource assessment."
+      ]
+    },
+
+    {
+      "tag": "stage_of_groundwater_extraction",
+      "patterns": [
+        "what is stage of groundwater extraction",
+        "what is stage of ground water extraction",
+        "explain stage of groundwater extraction",
+        "what does stage of groundwater extraction mean",
+        "how is stage of groundwater extraction calculated",
+        "tell me about groundwater extraction stage",
+        "what is extraction stage"
+      ],
+      "responses": [
+        "The stage of groundwater extraction is an indicator that compares groundwater extraction with the available groundwater resource for an assessment unit.",
+        "The stage of groundwater extraction helps indicate the level of groundwater development in an assessment unit."
+      ]
+    },
+
+    {
+      "tag": "groundwater_categories",
+      "patterns": [
+        "what are groundwater assessment categories",
+        "what are the groundwater categories",
+        "explain groundwater categories",
+        "what is safe category",
+        "what is semi critical category",
+        "what is critical category",
+        "what is over exploited category",
+        "what does over exploited mean"
+      ],
+      "responses": [
+        "Groundwater assessment units can be categorized as Safe, Semi-Critical, Critical, or Over-Exploited based on the stage of groundwater extraction.",
+        "The categories help communicate the level of groundwater development and stress in an assessment unit."
+      ]
+    },
+
+    {
+      "tag": "safe_category",
+      "patterns": [
+        "what is safe groundwater category",
+        "what does safe mean in groundwater",
+        "what is a safe assessment unit",
+        "safe groundwater area",
+        "explain safe groundwater category"
+      ],
+      "responses": [
+        "A Safe category indicates a relatively lower stage of groundwater extraction compared with the available resource."
+      ]
+    },
+
+    {
+      "tag": "semi_critical_category",
+      "patterns": [
+        "what is semi critical groundwater",
+        "what does semi critical mean",
+        "semi critical category",
+        "explain semi critical groundwater",
+        "what is a semi critical assessment unit"
+      ],
+      "responses": [
+        "Semi-Critical is a groundwater assessment category indicating a higher level of groundwater development than the Safe category."
+      ]
+    },
+
+    {
+      "tag": "critical_category",
+      "patterns": [
+        "what is critical groundwater",
+        "what does critical mean in groundwater",
+        "critical category",
+        "explain critical groundwater",
+        "what is a critical assessment unit"
+      ],
+      "responses": [
+        "Critical is a groundwater assessment category indicating a high level of groundwater development and extraction."
+      ]
+    },
+
+    {
+      "tag": "over_exploited_category",
+      "patterns": [
+        "what is over exploited groundwater",
+        "what does over exploited mean",
+        "over exploited category",
+        "explain over exploited groundwater",
+        "what is an over exploited assessment unit",
+        "how is an area classified as over exploited"
+      ],
+      "responses": [
+        "An Over-Exploited category indicates that groundwater extraction has reached a level that exceeds the assessed available resource."
+      ]
+    },
+
+    {
+      "tag": "assessment_unit",
+      "patterns": [
+        "what is an assessment unit",
+        "what are assessment units",
+        "what is groundwater assessment unit",
+        "explain assessment unit",
+        "what does assessment unit mean",
+        "which areas are used for groundwater assessment"
+      ],
+      "responses": [
+        "An assessment unit is a geographical administrative or hydrogeological unit used for groundwater-resource assessment, such as a block, mandal, or taluk depending on the region."
+      ]
+    },
+
+    {
+      "tag": "historical_data",
+      "patterns": [
+        "can i see historical groundwater data",
+        "show historical groundwater data",
+        "what is historical groundwater data",
+        "can i compare groundwater data by year",
+        "can groundwater data be compared across years",
+        "show previous groundwater assessment",
+        "can i see previous assessment data",
+        "groundwater trend over years"
+      ],
+      "responses": [
+        "Historical groundwater assessments can be used to study changes and trends in groundwater resources over different assessment periods."
+      ]
+    },
+
+    {
+      "tag": "location_data",
+      "patterns": [
+        "can i find groundwater data for my area",
+        "groundwater data for my district",
+        "groundwater data for my state",
+        "show groundwater data for a location",
+        "can i search by district",
+        "can i search by state",
+        "can i search by block",
+        "how can i find groundwater data for my location"
+      ],
+      "responses": [
+        "Yes. A groundwater-data assistant can help users find assessment information for a specific state, district, block, mandal, or taluk when the relevant INGRES data is available."
+      ]
+    },
+
+    {
+      "tag": "data_query",
+      "patterns": [
+        "show groundwater data",
+        "give me groundwater information",
+        "i need groundwater data",
+        "find groundwater data",
+        "search groundwater data",
+        "get groundwater information",
+        "show me resource data",
+        "i want groundwater statistics"
+      ],
+      "responses": [
+        "Sure. Please provide a location such as a state, district, block, mandal, or taluk and I can help interpret the requested groundwater information."
+      ]
+    },
+
+    {
+      "tag": "help",
+      "patterns": [
+        "help me",
+        "i need help",
+        "what can you do",
+        "how can you help me",
+        "what can this chatbot do",
+        "what questions can i ask",
+        "how do i use this chatbot",
+        "what information can you provide"
+      ],
+      "responses": [
+        "I can help explain INGRES, groundwater assessment, recharge, extraction, resource categories, and groundwater-related information.",
+        "You can ask me questions about INGRES and groundwater-resource assessment."
+      ]
+    },
+
+    {
+      "tag": "contact",
+      "patterns": [
+        "how can i contact ingres",
+        "contact ingres",
+        "how do i contact support",
+        "i need support",
+        "where can i get help",
+        "how can i contact support",
+        "contact information",
+        "who can help me"
+      ],
+      "responses": [
+        "For official support or contact information, please refer to the official INGRES or Central Ground Water Board contact channels."
+      ]
+    },
+
+    {
+      "tag": "unknown",
+      "patterns": [
+        "random question",
+        "something else",
+        "i don't understand",
+        "not sure",
+        "i have another question",
+        "blah blah",
+        "abc xyz"
+      ],
+      "responses": [
+        "I'm sorry, I couldn't understand your question. Please try asking about INGRES or groundwater resources.",
+        "I didn't quite understand that. You can ask me about groundwater, recharge, extraction, assessment, or INGRES."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>INGRES AI Virtual Assistant</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+
+<div class="app-container">
+
+
+    <!-- ==================================================
+         SIDEBAR
+         ================================================== -->
+
+    <aside
+        id="sidebar"
+        class="sidebar"
+    >
+
+
+        <!-- Sidebar Header -->
+
+        <div class="sidebar-header">
+
+            <div class="sidebar-title">
+
+                <span class="sidebar-icon">
+                    💬
+                </span>
+
+                <span>
+                    Recent Chats
+                </span>
+
+            </div>
+
+
+            <button
+                id="close-sidebar-button"
+                class="icon-button mobile-only"
+                type="button"
+                title="Close"
+            >
+                ✕
+            </button>
+
+        </div>
+
+
+        <!-- ==================================================
+             RECENT CHAT LIST
+             ================================================== -->
+
+        <div
+            id="recent-chat-list"
+            class="recent-chat-list"
+        >
+
+            <!-- Recent chats are added by JavaScript -->
+
+        </div>
+
+
+        <!-- Sidebar Footer -->
+
+        <div class="sidebar-footer">
+
+            <span>
+                INGRES AI
+            </span>
+
+            <span>
+                Virtual Assistant
+            </span>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- ==================================================
+         MAIN CHAT
+         ================================================== -->
+
+    <main class="chat-container">
+
+
+        <!-- ==================================================
+             HEADER
+             ================================================== -->
+
+        <header class="chat-header">
+
+
+            <div class="header-left">
+
+
+                <!-- Mobile Sidebar Button -->
+
+                <button
+                    id="open-sidebar-button"
+                    class="icon-button mobile-only"
+                    type="button"
+                    title="Recent Chats"
+                >
+                    ☰
+                </button>
+
+
+                <!-- Bot Avatar -->
+
+                <div class="bot-avatar">
+                    🤖
+                </div>
+
+
+                <!-- Header Information -->
+
+                <div class="header-info">
+
+                    <h2>
+                        INGRES AI Assistant
+                    </h2>
+
+
+                    <div class="online-status">
+
+                        <span class="online-dot"></span>
+
+                        Online
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================================
+                 NEW CHAT MENU
+                 ================================================== -->
+
+            <div class="new-chat-wrapper">
+
+
+                <button
+                    id="new-chat-button"
+                    class="new-chat-button"
+                    type="button"
+                >
+
+                    🗑️ New Chat
+
+                </button>
+
+
+                <div
+                    id="new-chat-menu"
+                    class="new-chat-menu hidden"
+                >
+
+
+                    <button
+                        id="clear-messages-button"
+                        type="button"
+                    >
+
+                        🧹 Clear Messages
+
+                    </button>
+
+
+                    <button
+                        id="clear-memory-button"
+                        type="button"
+                    >
+
+                        🧠 Clear Conversation Memory
+
+                    </button>
+
+
+                    <button
+                        id="start-fresh-button"
+                        type="button"
+                    >
+
+                        ✨ Start Fresh
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- ==================================================
+             CHAT BOX
+             ================================================== -->
+
+        <div
+            id="chat-box"
+            class="chat-box"
+        >
+
+
+            <!-- Initial Welcome Message -->
+
+            <div class="message bot-message">
+
+
+                <div class="message-icon">
+                    🤖
+                </div>
+
+
+                <div class="message-content">
+
+
+                    <div class="message-name">
+                        INGRES Assistant
+                    </div>
+
+
+                    <div class="message-text">
+
+                        <p>
+                            Hello! 👋
+                        </p>
+
+
+                        <p>
+
+                            Welcome to the
+                            <strong>
+                                INGRES AI Virtual Assistant
+                            </strong>.
+
+                        </p>
+
+
+                        <p>
+
+                            I can help you with
+                            INGRES, groundwater,
+                            programming, education,
+                            calculations, technical
+                            problems, and general
+                            questions.
+
+                        </p>
+
+
+                        <p>
+                            How can I help you today?
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ==================================================
+             TYPING INDICATOR
+             ================================================== -->
+
+        <div
+            id="typing"
+            class="typing-container hidden"
+        >
+
+            <div class="message-icon">
+                🤖
+            </div>
+
+
+            <div class="typing-content">
+
+                <div class="message-name">
+                    INGRES Assistant
+                </div>
+
+
+                <div class="typing-bubble">
+
+                    <span></span>
+                    <span></span>
+                    <span></span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ==================================================
+             INPUT AREA
+             ================================================== -->
+
+        <div class="chat-input-area">
+
+
+            <input
+                type="text"
+                id="user-input"
+                placeholder="Ask anything..."
+                autocomplete="off"
+            >
+
+
+            <button
+                id="send-button"
+                type="button"
+            >
+
+                Send
+
+            </button>
+
+        </div>
+
+
+    </main>
+
+
+</div>
+
+
+
+<script
+    src="{{ url_for('static', filename='js/script.js') }}"
+></script>
+
+
+</body>
+
+</html>
