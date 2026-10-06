@@ -73,22 +73,18 @@ def health():
 # RUN SERVER
 # ==============================
 
+
 if __name__ == "__main__":
     print("\n======================================")
     print("       INGRES AI CHATBOT SERVER")
     print("======================================")
-    print("Server:   http://127.0.0.1:5000")
-    print("Home:     http://127.0.0.1:5000/")
-    print("Login:    http://127.0.0.1:5000/login")
-    print("Register: http://127.0.0.1:5000/register")
-    print("Forgot:   http://127.0.0.1:5000/forgot-password")
-    print("API:      http://127.0.0.1:5000/api/chat")
-    print("Auth:     http://127.0.0.1:5000/api/auth")
-    print("Health:   http://127.0.0.1:5000/health")
+    print("Home:   http://127.0.0.1:5000/")
+    print("Health: http://127.0.0.1:5000/health")
     print("======================================\n")
 
     app.run(
-        host="127.0.0.1",
-        port=5000,
-        debug=True
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 5000)),
+        debug=False
     )
+
