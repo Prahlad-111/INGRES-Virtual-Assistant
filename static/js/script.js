@@ -1,1621 +1,1052 @@
-// ==================================================
-// ELEMENTS
-// ==================================================
+// ============================================================
+// INGRES AI ASSISTANT
+// JWT AUTHENTICATION + MONGODB CHAT HISTORY
+// ============================================================
 
-const chatBox =
-    document.getElementById("chat-box");
+"use strict";
 
-const userInput =
-    document.getElementById("user-input");
+// ============================================================
+// GLOBAL VARIABLES
+// ============================================================
 
-const sendButton =
-    document.getElementById("send-button");
+let chatBox = null;
+let userInput = null;
+let sendButton = null;
+let typingIndicator = null;
+let recentChatList = null;
 
-const typingIndicator =
-    document.getElementById("typing");
+let newChatButton = null;
+let newChatMenu = null;
 
-const newChatButton =
-    document.getElementById("new-chat-button");
+let clearChatButton = null;
+let clearMemoryButton = null;
+let clearMessagesButton = null;
+let startFreshButton = null;
 
-const newChatMenu =
-    document.getElementById("new-chat-menu");
+let accountButton = null;
+let accountMenu = null;
+let accountName = null;
+let accountDisplayName = null;
+let accountDisplayEmail = null;
+let switchAccountButton = null;
+let logoutButton = null;
 
-const clearMessagesButton =
-    document.getElementById("clear-messages-button");
+let openSidebarButton = null;
+let closeSidebarButton = null;
+let sidebar = null;
 
-const clearMemoryButton =
-    document.getElementById("clear-memory-button");
+let currentConversationId = null;
+let isSending = false;
+let isClearing = false;
 
-const startFreshButton =
-    document.getElementById("start-fresh-button");
+// ============================================================
+// AUTHENTICATION
+// ============================================================
 
-const recentChatList =
-    document.getElementById("recent-chat-list");
-
-const sidebar =
-    document.getElementById("sidebar");
-
-const openSidebarButton =
-    document.getElementById("open-sidebar-button");
-
-const closeSidebarButton =
-    document.getElementById("close-sidebar-button");
-
-
-// ==================================================
-// STORAGE
-// ==================================================
-
-const STORAGE_KEY =
-    "ingres_ai_chat_history";
-
-
-// ==================================================
-// CONVERSATION MEMORY
-// ==================================================
-
-let conversationHistory = [];
-
-let currentChatId = null;
-
-
-// ==================================================
-// LOAD SAVED CHATS
-// ==================================================
-
-let savedChats = loadChats();
-
-
-// ==================================================
-// LOAD CHATS
-// ==================================================
-
-function loadChats() {
-
-    try {
-
-        const stored =
-            localStorage.getItem(
-                STORAGE_KEY
-            );
-
-
-        if (!stored) {
-
-            return [];
-
-        }
-
-
-        const chats =
-            JSON.parse(stored);
-
-
-        if (!Array.isArray(chats)) {
-
-            return [];
-
-        }
-
-
-        return chats;
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "Could not load chat history:",
-            error
-        );
-
-        return [];
-
-    }
-
-}
-
-
-// ==================================================
-// SAVE CHATS
-// ==================================================
-
-function saveChats() {
-
-    try {
-
-        localStorage.setItem(
-
-            STORAGE_KEY,
-
-            JSON.stringify(
-                savedChats
-            )
-
-        );
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "Could not save chat history:",
-            error
-        );
-
-    }
-
-}
-
-
-// ==================================================
-// GENERATE CHAT ID
-// ==================================================
-
-function generateChatId() {
-
+function getAuthToken() {
     return (
-
-        Date.now().toString() +
-
-        Math.random()
-            .toString(36)
-            .substring(2, 9)
-
+        localStorage.getItem("ingres_token") ||
+        localStorage.getItem("ingresToken")
     );
-
 }
 
+function getCurrentUser() {
+    const savedUser =
+        localStorage.getItem("ingres_user") ||
+        localStorage.getItem("ingresUser");
 
-// ==================================================
-// FORMAT DATE
-// ==================================================
-
-function formatChatTime(
-    timestamp
-) {
-
-    const date =
-        new Date(timestamp);
-
-    const now =
-        new Date();
-
-
-    const today =
-        now.toDateString()
-        === date.toDateString();
-
-
-    if (today) {
-
-        return date.toLocaleTimeString(
-
-            [],
-
-            {
-
-                hour: "2-digit",
-
-                minute: "2-digit"
-
-            }
-
-        );
-
+    if (!savedUser) {
+        return null;
     }
 
-
-    return date.toLocaleDateString(
-
-        [],
-
-        {
-
-            day: "2-digit",
-
-            month: "short"
-
-        }
-
-    );
-
+    try {
+        return JSON.parse(savedUser);
+    } catch (error) {
+        console.error("Unable to read user information:", error);
+        return null;
+    }
 }
 
-
-// ==================================================
-// CREATE CHAT TITLE
-// ==================================================
-
-function createChatTitle(
-    message
-) {
-
-    if (!message) {
-
-        return "New Conversation";
-
-    }
-
-
-    let title =
-        message.trim();
-
-
-    if (title.length > 35) {
-
-        title =
-            title.substring(
-                0,
-                35
-            )
-            + "...";
-
-    }
-
-
-    return title;
-
+function clearAuthData() {
+    localStorage.removeItem("ingres_token");
+    localStorage.removeItem("ingres_user");
+    localStorage.removeItem("ingresToken");
+    localStorage.removeItem("ingresUser");
 }
 
+async function authenticatedFetch(url, options = {}) {
+    const token = getAuthToken();
 
-// ==================================================
-// CREATE NEW CHAT
-// ==================================================
+    if (!token) {
+        window.location.href = "/login";
+        throw new Error("Authentication token is missing.");
+    }
 
-function createChat(
-    message
-) {
-
-    const chat = {
-
-        id:
-            generateChatId(),
-
-        title:
-            createChatTitle(
-                message
-            ),
-
-        createdAt:
-            Date.now(),
-
-        updatedAt:
-            Date.now(),
-
-        messages:
-            []
-
+    const headers = {
+        ...(options.headers || {}),
+        Authorization: `Bearer ${token}`
     };
 
-
-    savedChats.unshift(
-        chat
-    );
-
-
-    currentChatId =
-        chat.id;
-
-
-    saveChats();
-
-    renderRecentChats();
-
-
-    return chat;
-
-}
-
-
-// ==================================================
-// GET CURRENT CHAT
-// ==================================================
-
-function getCurrentChat() {
-
-    return savedChats.find(
-
-        function(chat) {
-
-            return (
-                chat.id ===
-                currentChatId
-            );
-
-        }
-
-    );
-
-}
-
-
-// ==================================================
-// SAVE CURRENT CONVERSATION
-// ==================================================
-
-function saveCurrentConversation() {
-
-    if (!currentChatId) {
-
-        return;
-
-    }
-
-
-    const chat =
-        getCurrentChat();
-
-
-    if (!chat) {
-
-        return;
-
-    }
-
-
-    chat.messages =
-        conversationHistory.map(
-
-            function(item) {
-
-                return {
-
-                    role:
-                        item.role,
-
-                    message:
-                        item.message
-
-                };
-
-            }
-
-        );
-
-
-    chat.updatedAt =
-        Date.now();
-
-
-    savedChats.sort(
-
-        function(a, b) {
-
-            return (
-                b.updatedAt -
-                a.updatedAt
-            );
-
-        }
-
-    );
-
-
-    saveChats();
-
-    renderRecentChats();
-
-}
-
-
-// ==================================================
-// MARKDOWN FORMATTER
-// ==================================================
-
-function formatBotMessage(
-    message
-) {
-
-    let html =
-        String(message);
-
-
-    html = html
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        );
-
-
-    // Code blocks
-
-    html = html.replace(
-
-        /```(?:[a-zA-Z0-9_+-]+)?\s*([\s\S]*?)```/g,
-
-        function(
-            match,
-            code
-        ) {
-
-            return `
-                <pre class="code-block"><code>${code.trim()}</code></pre>
-            `;
-
-        }
-
-    );
-
-
-    // Inline code
-
-    html = html.replace(
-
-        /`([^`]+)`/g,
-
-        "<code>$1</code>"
-
-    );
-
-
-    // Bold
-
-    html = html.replace(
-
-        /\*\*(.*?)\*\*/g,
-
-        "<strong>$1</strong>"
-
-    );
-
-
-    // Italic
-
-    html = html.replace(
-
-        /(?<!\*)\*([^*\n]+)\*(?!\*)/g,
-
-        "<em>$1</em>"
-
-    );
-
-
-    // Headings
-
-    html = html.replace(
-
-        /^### (.*)$/gm,
-
-        "<h4>$1</h4>"
-
-    );
-
-
-    html = html.replace(
-
-        /^## (.*)$/gm,
-
-        "<h3>$1</h3>"
-
-    );
-
-
-    html = html.replace(
-
-        /^# (.*)$/gm,
-
-        "<h2>$1</h2>"
-
-    );
-
-
-    // Bullets
-
-    html = html.replace(
-
-        /^\s*[-•]\s+(.*)$/gm,
-
-        "<li>$1</li>"
-
-    );
-
-
-    // Numbered lists
-
-    html = html.replace(
-
-        /^\s*\d+\.\s+(.*)$/gm,
-
-        "<li>$1</li>"
-
-    );
-
-
-    // Horizontal line
-
-    html = html.replace(
-
-        /^\s*---+\s*$/gm,
-
-        "<hr>"
-
-    );
-
-
-    // New lines
-
-    html = html.replace(
-
-        /\n/g,
-
-        "<br>"
-
-    );
-
-
-    return html;
-
-}
-
-
-// ==================================================
-// ADD MESSAGE
-// ==================================================
-
-function addMessage(
-    message,
-    sender
-) {
-
-    const messageDiv =
-        document.createElement(
-            "div"
-        );
-
-
-    messageDiv.classList.add(
-        "message"
-    );
-
-
-    if (
-        sender === "user"
-    ) {
-
-        messageDiv.classList.add(
-            "user-message"
-        );
-
-    }
-
-    else {
-
-        messageDiv.classList.add(
-            "bot-message"
-        );
-
-    }
-
-
-    const icon =
-        document.createElement(
-            "div"
-        );
-
-
-    icon.classList.add(
-        "message-icon"
-    );
-
-
-    icon.textContent =
-        sender === "user"
-            ? "👤"
-            : "🤖";
-
-
-    const content =
-        document.createElement(
-            "div"
-        );
-
-
-    content.classList.add(
-        "message-content"
-    );
-
-
-    const name =
-        document.createElement(
-            "div"
-        );
-
-
-    name.classList.add(
-        "message-name"
-    );
-
-
-    name.textContent =
-        sender === "user"
-            ? "You"
-            : "INGRES Assistant";
-
-
-    const text =
-        document.createElement(
-            "div"
-        );
-
-
-    text.classList.add(
-        "message-text"
-    );
-
-
-    if (
-        sender === "bot"
-    ) {
-
-        text.innerHTML =
-            formatBotMessage(
-                message
-            );
-
-    }
-
-    else {
-
-        text.textContent =
-            message;
-
-    }
-
-
-    content.appendChild(
-        name
-    );
-
-    content.appendChild(
-        text
-    );
-
-
-    messageDiv.appendChild(
-        icon
-    );
-
-    messageDiv.appendChild(
-        content
-    );
-
-
-    chatBox.appendChild(
-        messageDiv
-    );
-
-
-    setTimeout(
-
-        function() {
-
-            chatBox.scrollTop =
-                chatBox.scrollHeight;
-
-        },
-
-        30
-
-    );
-
-}
-
-
-// ==================================================
-// TYPING
-// ==================================================
-
-function showTyping() {
-
-    typingIndicator.classList.remove(
-        "hidden"
-    );
-
-
-    chatBox.scrollTop =
-        chatBox.scrollHeight;
-
-}
-
-
-function hideTyping() {
-
-    typingIndicator.classList.add(
-        "hidden"
-    );
-
-}
-
-
-// ==================================================
-// RENDER RECENT CHATS
-// ==================================================
-
-function renderRecentChats() {
-
-    recentChatList.innerHTML =
-        "";
-
-
-    if (
-        savedChats.length === 0
-    ) {
-
-        const empty =
-            document.createElement(
-                "div"
-            );
-
-
-        empty.className =
-            "empty-history";
-
-
-        empty.textContent =
-            "No recent chats yet.";
-
-
-        recentChatList.appendChild(
-            empty
-        );
-
-
-        return;
-
-    }
-
-
-    savedChats.forEach(
-
-        function(chat) {
-
-            const item =
-                document.createElement(
-                    "div"
-                );
-
-
-            item.className =
-                "recent-chat-item";
-
-
-            if (
-                chat.id ===
-                currentChatId
-            ) {
-
-                item.classList.add(
-                    "active"
-                );
-
-            }
-
-
-            const icon =
-                document.createElement(
-                    "span"
-                );
-
-
-            icon.className =
-                "recent-chat-icon";
-
-
-            icon.textContent =
-                "💬";
-
-
-            const content =
-                document.createElement(
-                    "div"
-                );
-
-
-            content.className =
-                "recent-chat-content";
-
-
-            const title =
-                document.createElement(
-                    "div"
-                );
-
-
-            title.className =
-                "recent-chat-title";
-
-
-            title.textContent =
-                chat.title;
-
-
-            const time =
-                document.createElement(
-                    "div"
-                );
-
-
-            time.className =
-                "recent-chat-time";
-
-
-            time.textContent =
-                formatChatTime(
-                    chat.updatedAt
-                );
-
-
-            content.appendChild(
-                title
-            );
-
-            content.appendChild(
-                time
-            );
-
-
-            const deleteButton =
-                document.createElement(
-                    "button"
-                );
-
-
-            deleteButton.className =
-                "delete-chat-button";
-
-
-            deleteButton.type =
-                "button";
-
-
-            deleteButton.textContent =
-                "🗑";
-
-
-            deleteButton.title =
-                "Delete chat";
-
-
-            deleteButton.addEventListener(
-
-                "click",
-
-                function(event) {
-
-                    event.stopPropagation();
-
-                    deleteChat(
-                        chat.id
-                    );
-
-                }
-
-            );
-
-
-            item.addEventListener(
-
-                "click",
-
-                function() {
-
-                    loadChat(
-                        chat.id
-                    );
-
-                }
-
-            );
-
-
-            item.appendChild(
-                icon
-            );
-
-            item.appendChild(
-                content
-            );
-
-            item.appendChild(
-                deleteButton
-            );
-
-
-            recentChatList.appendChild(
-                item
-            );
-
-        }
-
-    );
-
-}
-
-
-// ==================================================
-// LOAD CHAT
-// ==================================================
-
-function loadChat(
-    chatId
-) {
-
-    const chat =
-        savedChats.find(
-
-            function(item) {
-
-                return (
-                    item.id ===
-                    chatId
-                );
-
-            }
-
-        );
-
-
-    if (!chat) {
-
-        return;
-
-    }
-
-
-    currentChatId =
-        chat.id;
-
-
-    conversationHistory =
-        Array.isArray(
-            chat.messages
-        )
-
-            ? chat.messages.map(
-
-                function(item) {
-
-                    return {
-
-                        role:
-                            item.role,
-
-                        message:
-                            item.message
-
-                    };
-
-                }
-
-            )
-
-            : [];
-
-
-    chatBox.innerHTML =
-        "";
-
-
-    conversationHistory.forEach(
-
-        function(item) {
-
-            addMessage(
-
-                item.message,
-
-                item.role === "user"
-                    ? "user"
-                    : "bot"
-
-            );
-
-        }
-
-    );
-
-
-    if (
-        conversationHistory.length === 0
-    ) {
-
-        showWelcomeMessage();
-
-    }
-
-
-    renderRecentChats();
-
-    closeSidebar();
-
-    userInput.focus();
-
-}
-
-
-// ==================================================
-// DELETE CHAT
-// ==================================================
-
-function deleteChat(
-    chatId
-) {
-
-    const confirmed =
-        confirm(
-            "Delete this conversation?"
-        );
-
-
-    if (!confirmed) {
-
-        return;
-
-    }
-
-
-    savedChats =
-        savedChats.filter(
-
-            function(chat) {
-
-                return (
-                    chat.id !==
-                    chatId
-                );
-
-            }
-
-        );
-
-
-    saveChats();
-
-
-    if (
-        currentChatId ===
-        chatId
-    ) {
-
-        currentChatId =
-            null;
-
-        conversationHistory =
-            [];
-
-        chatBox.innerHTML =
-            "";
-
-        showWelcomeMessage();
-
-    }
-
-
-    renderRecentChats();
-
-}
-
-
-// ==================================================
-// WELCOME
-// ==================================================
-
-function showWelcomeMessage() {
-
-    addMessage(
-
-        "Hello! 👋\n\n" +
-
-        "Welcome to the INGRES AI Virtual Assistant.\n\n" +
-
-        "I can help you with INGRES, groundwater, " +
-
-        "programming, education, calculations, " +
-
-        "technical problems, and general questions.\n\n" +
-
-        "How can I help you today?",
-
-        "bot"
-
-    );
-
-}
-
-
-// ==================================================
-// ENSURE CURRENT CHAT
-// ==================================================
-
-function ensureCurrentChat(
-    message
-) {
-
-    if (
-        currentChatId
-    ) {
-
-        return;
-
-    }
-
-
-    createChat(
-        message
-    );
-
-}
-
-
-// ==================================================
-// SEND MESSAGE
-// ==================================================
-
-async function sendMessage() {
-
-    const message =
-        userInput.value.trim();
-
-
-    if (!message) {
-
-        return;
-
-    }
-
-
-    ensureCurrentChat(
-        message
-    );
-
-
-    addMessage(
-        message,
-        "user"
-    );
-
-
-    conversationHistory.push({
-
-        role:
-            "user",
-
-        message:
-            message
-
+    const response = await fetch(url, {
+        ...options,
+        headers
     });
 
+    if (response.status === 401 || response.status === 403) {
+        clearAuthData();
+        window.location.href = "/login";
 
-    saveCurrentConversation();
+        throw new Error("Authentication expired.");
+    }
 
+    return response;
+}
 
-    userInput.value =
-        "";
+// ============================================================
+// HTML ESCAPING
+// ============================================================
 
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
 
-    sendButton.disabled =
-        true;
+// ============================================================
+// MARKDOWN RENDERING
+// ============================================================
 
+function renderMarkdown(value) {
+    if (!value) {
+        return "";
+    }
 
+    let text = String(value);
+    const codeBlocks = [];
+
+    // Preserve fenced code blocks before processing Markdown.
+    text = text.replace(
+        /```([^\n`]*)\n?([\s\S]*?)```/g,
+        function (match, language, code) {
+            const lang = language.trim().split(/\s+/)[0];
+            const safeCode = escapeHtml(code.replace(/^\n|\n$/g, ""));
+
+            const html = `
+                <pre class="code-block"><code class="${
+                    lang ? "language-" + escapeHtml(lang) : ""
+                }">${safeCode}</code></pre>
+            `;
+
+            const placeholder = `@@CODEBLOCK${codeBlocks.length}@@`;
+            codeBlocks.push(html);
+
+            return placeholder;
+        }
+    );
+
+    // Escape ordinary text.
+    text = escapeHtml(text);
+
+    // Inline code.
+    text = text.replace(
+        /`([^`\n]+)`/g,
+        "<code>$1</code>"
+    );
+
+    // Bold.
+    text = text.replace(
+        /\*\*(.*?)\*\*/g,
+        "<strong>$1</strong>"
+    );
+
+    // Italic.
+    text = text.replace(
+        /(^|[^*])\*([^*\n]+)\*(?!\*)/g,
+        "$1<em>$2</em>"
+    );
+
+    // Headings.
+    text = text.replace(
+        /^### (.*)$/gm,
+        "<h4>$1</h4>"
+    );
+
+    text = text.replace(
+        /^## (.*)$/gm,
+        "<h3>$1</h3>"
+    );
+
+    text = text.replace(
+        /^# (.*)$/gm,
+        "<h2>$1</h2>"
+    );
+
+    // Unordered lists.
+    text = text.replace(
+        /^(?:- |\* ).+$/gm,
+        function (line) {
+            return "<li>" + line.substring(2) + "</li>";
+        }
+    );
+
+    text = text.replace(
+        /(?:<li>.*?<\/li>\n?)+/gs,
+        function (items) {
+            return "<ul>" + items + "</ul>";
+        }
+    );
+
+    // Numbered lists.
+    text = text.replace(
+        /^\d+\.\s+(.+)$/gm,
+        "<li>$1</li>"
+    );
+
+    text = text.replace(
+        /(?:<li>.*?<\/li>\n?)+/gs,
+        function (items) {
+            if (items.includes("<ul>")) {
+                return items;
+            }
+
+            return "<ol>" + items + "</ol>";
+        }
+    );
+
+    // Links: only allow HTTP(S) URLs.
+    text = text.replace(
+        /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,
+        function (match, label, url) {
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+        }
+    );
+
+    // Newlines.
+    text = text.replace(/\n/g, "<br>");
+
+    // Restore code blocks.
+    codeBlocks.forEach(function (html, index) {
+        text = text.replace(
+            `@@CODEBLOCK${index}@@`,
+            html
+        );
+    });
+
+    return text;
+}
+
+// ============================================================
+// ADD MESSAGE TO CHAT
+// ============================================================
+
+function addMessage(message, sender) {
+    if (!chatBox) {
+        console.error("Chat box was not found.");
+        return;
+    }
+
+    const wrapper = document.createElement("div");
+    wrapper.className =
+        sender === "user"
+            ? "message user-message"
+            : "message bot-message";
+
+    const icon = document.createElement("div");
+    icon.className = "message-icon";
+    icon.textContent = sender === "user" ? "👤" : "🤖";
+
+    const content = document.createElement("div");
+    content.className = "message-content";
+
+    const name = document.createElement("div");
+    name.className = "message-name";
+    name.textContent =
+        sender === "user" ? "You" : "INGRES Assistant";
+
+    const messageText = document.createElement("div");
+    messageText.className = "message-text";
+
+    if (sender === "assistant") {
+        messageText.innerHTML = renderMarkdown(message);
+    } else {
+        messageText.textContent = String(message);
+    }
+
+    content.appendChild(name);
+    content.appendChild(messageText);
+
+    wrapper.appendChild(icon);
+    wrapper.appendChild(content);
+
+    chatBox.appendChild(wrapper);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// ============================================================
+// TYPING INDICATOR
+// ============================================================
+
+function showTyping() {
+    if (typingIndicator) {
+        typingIndicator.classList.remove("hidden");
+    }
+}
+
+function hideTyping() {
+    if (typingIndicator) {
+        typingIndicator.classList.add("hidden");
+    }
+}
+
+// ============================================================
+// SEND MESSAGE
+// ============================================================
+
+async function sendMessage() {
+    if (isSending) {
+        return;
+    }
+
+    if (!userInput) {
+        console.error("Input element #user-input was not found.");
+        return;
+    }
+
+    const message = userInput.value.trim();
+
+    if (!message) {
+        return;
+    }
+
+    if (!getAuthToken()) {
+        window.location.href = "/login";
+        return;
+    }
+
+    isSending = true;
+
+    if (sendButton) {
+        sendButton.disabled = true;
+    }
+
+    addMessage(message, "user");
+
+    userInput.value = "";
     showTyping();
 
-
     try {
+        const response = await authenticatedFetch("/api/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: message,
+                conversation_id: currentConversationId
+            })
+        });
 
-        const response =
-            await fetch(
+        const data = await response.json();
 
-                "/api/chat",
-
-                {
-
-                    method:
-                        "POST",
-
-                    headers: {
-
-                        "Content-Type":
-                            "application/json"
-
-                    },
-
-                    body:
-                        JSON.stringify({
-
-                            message:
-                                message,
-
-                            conversation_history:
-                                conversationHistory.slice(
-                                    -10
-                                )
-
-                        })
-
-                }
-
+        if (!response.ok || !data.success) {
+            throw new Error(
+                data.message || "Unable to send your message."
             );
-
-
-        const data =
-            await response.json();
-
-
-        hideTyping();
-
-
-        if (
-            data.success
-        ) {
-
-            addMessage(
-
-                data.response,
-
-                "bot"
-
-            );
-
-
-            conversationHistory.push({
-
-                role:
-                    "assistant",
-
-                message:
-                    data.response
-
-            });
-
-
-            conversationHistory =
-                conversationHistory.slice(
-                    -10
-                );
-
-
-            saveCurrentConversation();
-
         }
 
-        else {
-
-            addMessage(
-
-                data.message ||
-                "Something went wrong.",
-
-                "bot"
-
-            );
-
+        if (data.conversation_id) {
+            currentConversationId = data.conversation_id;
         }
-
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "Chat error:",
-            error
-        );
-
-
-        hideTyping();
-
 
         addMessage(
-
-            "Unable to connect to the chatbot server.",
-
-            "bot"
-
+            data.response || "I couldn't generate a response.",
+            "assistant"
         );
 
+        await loadRecentChats();
+
+    } catch (error) {
+        console.error("Send message error:", error);
+
+        if (error.message !== "Authentication expired.") {
+            addMessage(
+                "Sorry, your message could not be processed. Please try again.",
+                "assistant"
+            );
+        }
+    } finally {
+        isSending = false;
+        hideTyping();
+
+        if (sendButton) {
+            sendButton.disabled = false;
+        }
+
+        if (userInput) {
+            userInput.focus();
+        }
+    }
+}
+
+// ============================================================
+// LOAD RECENT CHATS
+// ============================================================
+
+async function loadRecentChats() {
+    if (!recentChatList) {
+        return;
     }
 
+    try {
+        const response = await authenticatedFetch("/api/chats");
+        const data = await response.json();
 
-    sendButton.disabled =
-        false;
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Unable to load recent chats.");
+        }
 
+        recentChatList.innerHTML = "";
 
-    userInput.focus();
+        const chats = Array.isArray(data.chats) ? data.chats : [];
 
+        if (chats.length === 0) {
+            const empty = document.createElement("div");
+            empty.className = "empty-chat-message";
+            empty.textContent = "No recent chats";
+            recentChatList.appendChild(empty);
+            return;
+        }
+
+        chats.forEach(function (chat) {
+            const chatId = chat.id || chat._id;
+
+            if (!chatId) {
+                return;
+            }
+
+            const item = document.createElement("div");
+            item.className = "recent-chat-item";
+
+            if (String(chatId) === String(currentConversationId)) {
+                item.classList.add("active");
+            }
+
+            const title = document.createElement("span");
+            title.className = "recent-chat-title";
+            title.textContent = chat.title || "New Chat";
+
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.className = "delete-chat-button";
+            deleteButton.textContent = "🗑️";
+            deleteButton.title = "Delete chat";
+
+            deleteButton.addEventListener("click", async function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                await deleteChat(chatId, chat.title || "New Chat");
+            });
+
+            item.appendChild(title);
+            item.appendChild(deleteButton);
+
+            item.addEventListener("click", function () {
+                openConversation(chatId);
+            });
+
+            recentChatList.appendChild(item);
+        });
+
+    } catch (error) {
+        console.error("Load recent chats error:", error);
+    }
 }
 
+// ============================================================
+// DELETE A SAVED CHAT
+// ============================================================
 
-// ==================================================
-// CLEAR MESSAGES
-// ==================================================
-
-function clearMessages() {
-
-    chatBox.innerHTML =
-        "";
-
-
-    showWelcomeMessage();
-
-
-    newChatMenu.classList.add(
-        "hidden"
+async function deleteChat(conversationId, title) {
+    const confirmed = window.confirm(
+        `Delete "${title}"?\n\nThis conversation and its saved messages will be permanently deleted.`
     );
-
-
-    userInput.focus();
-
-}
-
-
-// ==================================================
-// CLEAR CONVERSATION MEMORY
-// ==================================================
-
-function clearConversationMemory() {
-
-    conversationHistory =
-        [];
-
-
-    newChatMenu.classList.add(
-        "hidden"
-    );
-
-
-    userInput.focus();
-
-}
-
-
-// ==================================================
-// START FRESH
-// ==================================================
-
-function startFresh() {
-
-    const confirmed =
-        confirm(
-
-            "Start a new conversation?\n\n" +
-
-            "Your current conversation will be saved " +
-
-            "in Recent Chats."
-
-        );
-
 
     if (!confirmed) {
-
         return;
-
     }
 
+    try {
+        const response = await authenticatedFetch(
+            `/api/chats/${encodeURIComponent(conversationId)}`,
+            {
+                method: "DELETE"
+            }
+        );
 
-    if (
-        conversationHistory.length > 0
-    ) {
+        const data = await response.json();
 
-        saveCurrentConversation();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Unable to delete this chat.");
+        }
 
+        if (String(currentConversationId) === String(conversationId)) {
+            currentConversationId = null;
+            showWelcomeMessage();
+        }
+
+        await loadRecentChats();
+
+    } catch (error) {
+        console.error("Delete chat error:", error);
+
+        if (error.message !== "Authentication expired.") {
+            alert(error.message || "Unable to delete the chat.");
+        }
+    }
+}
+
+// ============================================================
+// WELCOME MESSAGE
+// ============================================================
+
+function showWelcomeMessage() {
+    if (!chatBox) {
+        return;
     }
 
+    chatBox.innerHTML = "";
 
-    currentChatId =
-        null;
+    addMessage(
+        "## 👋 Hello!\nWelcome to the **INGRES AI Virtual Assistant**.\nHow can I help you today?",
+        "assistant"
+    );
+}
 
+// ============================================================
+// NEW CHAT
+// ============================================================
 
-    conversationHistory =
-        [];
-
-
-    chatBox.innerHTML =
-        "";
-
+function newChat() {
+    currentConversationId = null;
 
     showWelcomeMessage();
 
+    if (userInput) {
+        userInput.value = "";
+        userInput.focus();
+    }
 
-    newChatMenu.classList.add(
-        "hidden"
-    );
+    if (newChatMenu) {
+        newChatMenu.classList.add("hidden");
+    }
 
+    if (sidebar) {
+        sidebar.classList.remove("open");
+    }
 
-    renderRecentChats();
-
-
-    userInput.value =
-        "";
-
-
-    userInput.focus();
-
+    loadRecentChats();
 }
 
+// ============================================================
+// CLEAR CHAT
+// Permanently deletes the ACTIVE conversation from MongoDB.
+// ============================================================
 
-// ==================================================
-// NEW CHAT MENU
-// ==================================================
+async function clearCurrentMessages() {
+    await clearActiveConversation(
+        "Clear Chat will permanently delete this conversation and its saved messages. Continue?",
+        "Chat cleared. You can start a new conversation."
+    );
+}
 
-newChatButton.addEventListener(
+// ============================================================
+// CLEAR CONVERSATION MEMORY
+// Permanently deletes the ACTIVE conversation from MongoDB.
+// ============================================================
 
-    "click",
+async function clearConversationMemory() {
+    await clearActiveConversation(
+        "Clear Conversation Memory will permanently delete this conversation and its saved messages. Continue?",
+        "Conversation memory cleared. Start a new conversation."
+    );
+}
 
-    function(event) {
+// ============================================================
+// SHARED CLEAR FUNCTION
+// ============================================================
 
-        event.stopPropagation();
-
-        newChatMenu.classList.toggle(
-            "hidden"
-        );
-
+async function clearActiveConversation(confirmText, successText) {
+    if (isClearing) {
+        return;
     }
 
-);
-
-
-// ==================================================
-// CLEAR MESSAGES
-// ==================================================
-
-clearMessagesButton.addEventListener(
-
-    "click",
-
-    function() {
-
-        clearMessages();
-
+    if (!window.confirm(confirmText)) {
+        return;
     }
 
-);
+    isClearing = true;
 
+    const conversationId = currentConversationId;
 
-// ==================================================
-// CLEAR MEMORY
-// ==================================================
-
-clearMemoryButton.addEventListener(
-
-    "click",
-
-    function() {
-
-        clearConversationMemory();
-
-    }
-
-);
-
-
-// ==================================================
-// START FRESH
-// ==================================================
-
-startFreshButton.addEventListener(
-
-    "click",
-
-    function() {
-
-        startFresh();
-
-    }
-
-);
-
-
-// ==================================================
-// CLOSE MENU OUTSIDE
-// ==================================================
-
-document.addEventListener(
-
-    "click",
-
-    function(event) {
-
-        if (
-            !event.target.closest(
-                ".new-chat-wrapper"
-            )
-        ) {
-
-            newChatMenu.classList.add(
-                "hidden"
+    try {
+        // Delete the saved conversation and its messages.
+        if (conversationId) {
+            const response = await authenticatedFetch(
+                `/api/chats/${encodeURIComponent(conversationId)}`,
+                {
+                    method: "DELETE"
+                }
             );
 
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(
+                    data.message || "The conversation could not be deleted."
+                );
+            }
         }
 
+        // Clear the current view only after the delete succeeds.
+        currentConversationId = null;
+
+        if (chatBox) {
+            chatBox.innerHTML = "";
+        }
+
+        addMessage(successText, "assistant");
+
+        if (newChatMenu) {
+            newChatMenu.classList.add("hidden");
+        }
+
+        await loadRecentChats();
+
+        if (userInput) {
+            userInput.value = "";
+            userInput.focus();
+        }
+
+    } catch (error) {
+        console.error("Clear conversation error:", error);
+
+        if (error.message !== "Authentication expired.") {
+            alert(
+                error.message ||
+                "Unable to clear the conversation. Check the Flask terminal and browser console."
+            );
+        }
+    } finally {
+        isClearing = false;
     }
-
-);
-
-
-// ==================================================
-// OPEN SIDEBAR - MOBILE
-// ==================================================
-
-openSidebarButton.addEventListener(
-
-    "click",
-
-    function() {
-
-        sidebar.classList.add(
-            "open"
-        );
-
-    }
-
-);
-
-
-// ==================================================
-// CLOSE SIDEBAR - MOBILE
-// ==================================================
-
-closeSidebarButton.addEventListener(
-
-    "click",
-
-    function() {
-
-        closeSidebar();
-
-    }
-
-);
-
-
-function closeSidebar() {
-
-    sidebar.classList.remove(
-        "open"
-    );
-
 }
 
+// ============================================================
+// OPEN A SAVED CONVERSATION
+// ============================================================
 
-// ==================================================
-// ENTER KEY
-// ==================================================
+async function openConversation(conversationId) {
+    try {
+        const response = await authenticatedFetch(
+            `/api/chats/${encodeURIComponent(conversationId)}`
+        );
 
-userInput.addEventListener(
+        const data = await response.json();
 
-    "keydown",
-
-    function(event) {
-
-        if (
-            event.key === "Enter"
-        ) {
-
-            event.preventDefault();
-
-            sendMessage();
-
+        if (!response.ok || !data.success) {
+            throw new Error(
+                data.message || "Unable to open this conversation."
+            );
         }
 
+        currentConversationId = conversationId;
+
+        if (chatBox) {
+            chatBox.innerHTML = "";
+        }
+
+        const messages = Array.isArray(data.messages)
+            ? data.messages
+            : [];
+
+        if (messages.length === 0) {
+            addMessage("This conversation is empty.", "assistant");
+        } else {
+            messages.forEach(function (message) {
+                addMessage(
+                    message.message || "",
+                    message.role === "user" ? "user" : "assistant"
+                );
+            });
+        }
+
+        await loadRecentChats();
+
+        if (sidebar) {
+            sidebar.classList.remove("open");
+        }
+
+        if (userInput) {
+            userInput.focus();
+        }
+
+    } catch (error) {
+        console.error("Open conversation error:", error);
+
+        if (error.message !== "Authentication expired.") {
+            alert(error.message || "Unable to open this conversation.");
+        }
+    }
+}
+
+// ============================================================
+// ACCOUNT MENU
+// ============================================================
+
+function updateAccountUI() {
+    const user = getCurrentUser();
+
+    if (!user) {
+        if (accountName) {
+            accountName.textContent = "Account";
+        }
+
+        if (accountDisplayName) {
+            accountDisplayName.textContent = "User";
+        }
+
+        if (accountDisplayEmail) {
+            accountDisplayEmail.textContent = "Not signed in";
+        }
+
+        return;
     }
 
-);
+    const name = user.name || user.username || "User";
+    const email = user.email || "No email";
+
+    if (accountName) {
+        accountName.textContent = name;
+    }
+
+    if (accountDisplayName) {
+        accountDisplayName.textContent = name;
+    }
+
+    if (accountDisplayEmail) {
+        accountDisplayEmail.textContent = email;
+    }
+}
+
+function loginWithAnotherAccount() {
+    clearAuthData();
+    window.location.href = "/login";
+}
+
+function logout() {
+    const confirmed = window.confirm(
+        "Are you sure you want to log out?"
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    clearAuthData();
+    window.location.href = "/login";
+}
+
+// ============================================================
+// INITIALIZE THE APPLICATION
+// ============================================================
+
+document.addEventListener("DOMContentLoaded", function () {
+    console.log("INGRES AI Assistant loaded.");
+
+    // Get DOM elements only after the page is loaded.
+    chatBox = document.getElementById("chat-box");
+    userInput = document.getElementById("user-input");
+    sendButton = document.getElementById("send-button");
+    typingIndicator = document.getElementById("typing");
+    recentChatList = document.getElementById("recent-chat-list");
+
+    newChatButton = document.getElementById("new-chat-button");
+    newChatMenu = document.getElementById("new-chat-menu");
+
+    // IMPORTANT: Match the IDs in your actual HTML.
+    clearChatButton = document.getElementById("clear-chat-button");
+    clearMemoryButton = document.getElementById("clear-memory-button");
+
+    // Support older HTML if this ID still exists.
+    clearMessagesButton = document.getElementById("clear-messages-button");
+
+    startFreshButton = document.getElementById("start-fresh-button");
+
+    accountButton = document.getElementById("account-button");
+    accountMenu = document.getElementById("account-menu");
+    accountName = document.getElementById("account-name");
+    accountDisplayName = document.getElementById("account-display-name");
+    accountDisplayEmail = document.getElementById("account-display-email");
+    switchAccountButton = document.getElementById("switch-account-button");
+    logoutButton = document.getElementById("logout-button");
+
+    openSidebarButton = document.getElementById("open-sidebar-button");
+    closeSidebarButton = document.getElementById("close-sidebar-button");
+    sidebar = document.getElementById("sidebar");
+    
+/* ==============================================
+   MOBILE SIDEBAR SUPPORT
+============================================== */
+
+function closeMobileSidebar() {
+    if (sidebar) {
+        sidebar.classList.remove("open");
+    }
+
+    document.body.classList.remove("mobile-sidebar-open");
+
+    if (openSidebarButton) {
+        openSidebarButton.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+    }
+}
+
+function openMobileSidebar() {
+    if (sidebar) {
+        sidebar.classList.add("open");
+    }
+
+    document.body.classList.add("mobile-sidebar-open");
+
+    if (openSidebarButton) {
+        openSidebarButton.setAttribute(
+            "aria-expanded",
+            "true"
+        );
+    }
+}
+
+/* Keep overlay state synchronized with sidebar state */
+if (openSidebarButton) {
+    openSidebarButton.addEventListener("click", function () {
+        if (sidebar && sidebar.classList.contains("open")) {
+            closeMobileSidebar();
+        } else {
+            openMobileSidebar();
+        }
+    });
+}
+
+if (closeSidebarButton) {
+    closeSidebarButton.addEventListener("click", function () {
+        closeMobileSidebar();
+    });
+}
+
+/* Tap outside the sidebar to close it */
+document.addEventListener("click", function (event) {
+    if (
+        !sidebar ||
+        !sidebar.classList.contains("open") ||
+        window.innerWidth > 768
+    ) {
+        return;
+    }
+
+    const clickedSidebar = sidebar.contains(event.target);
+    const clickedToggle =
+        openSidebarButton &&
+        openSidebarButton.contains(event.target);
+
+    if (!clickedSidebar && !clickedToggle) {
+        closeMobileSidebar();
+    }
+});
+
+/* Close sidebar with Escape */
+document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") {
+        closeMobileSidebar();
+    }
+});
+
+/* Reset drawer state when switching back to desktop */
+window.addEventListener("resize", function () {
+    if (window.innerWidth > 768) {
+        closeMobileSidebar();
+    }
+});
 
 
-// ==================================================
-// INITIALIZE
-// ==================================================
+    // Verify essential HTML elements.
+    if (!chatBox) {
+        console.error("Missing HTML element: #chat-box");
+    }
 
-renderRecentChats();
+    if (!userInput) {
+        console.error("Missing HTML element: #user-input");
+    }
 
-userInput.focus();
+    if (!sendButton) {
+        console.error("Missing HTML element: #send-button");
+    }
+
+    if (!getAuthToken()) {
+        window.location.href = "/login";
+        return;
+    }
+
+    updateAccountUI();
+
+    // Send button.
+    if (sendButton) {
+        sendButton.addEventListener("click", function (event) {
+            event.preventDefault();
+            sendMessage();
+        });
+    }
+
+    // Enter sends; Shift + Enter inserts a new line.
+    if (userInput) {
+        userInput.addEventListener("keydown", function (event) {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+    }
+
+    // New Chat menu.
+    if (newChatButton) {
+        newChatButton.addEventListener("click", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (newChatMenu) {
+                newChatMenu.classList.toggle("hidden");
+            } else {
+                newChat();
+            }
+        });
+    }
+
+    // Clear Chat button: matches id="clear-chat-button".
+    if (clearChatButton) {
+        clearChatButton.addEventListener("click", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            clearCurrentMessages();
+        });
+    }
+
+    // Compatibility with older HTML.
+    if (clearMessagesButton && clearMessagesButton !== clearChatButton) {
+        clearMessagesButton.addEventListener("click", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            clearCurrentMessages();
+        });
+    }
+
+    // Clear Conversation Memory button.
+    if (clearMemoryButton) {
+        clearMemoryButton.addEventListener("click", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            clearConversationMemory();
+        });
+    }
+
+    // Start Fresh.
+    if (startFreshButton) {
+        startFreshButton.addEventListener("click", function (event) {
+            event.preventDefault();
+            newChat();
+        });
+    }
+
+    // Account menu.
+    if (accountButton) {
+        accountButton.addEventListener("click", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (accountMenu) {
+                accountMenu.classList.toggle("hidden");
+            }
+        });
+    }
+
+    // Switch account.
+    if (switchAccountButton) {
+        switchAccountButton.addEventListener("click", function (event) {
+            event.preventDefault();
+            loginWithAnotherAccount();
+        });
+    }
+
+    // Logout.
+    if (logoutButton) {
+        logoutButton.addEventListener("click", function (event) {
+            event.preventDefault();
+            logout();
+        });
+    }
+
+    // Close menus when clicking outside them.
+    document.addEventListener("click", function (event) {
+        if (
+            newChatMenu &&
+            newChatButton &&
+            !newChatMenu.contains(event.target) &&
+            !newChatButton.contains(event.target)
+        ) {
+            newChatMenu.classList.add("hidden");
+        }
+
+        if (
+            accountMenu &&
+            accountButton &&
+            !accountMenu.contains(event.target) &&
+            !accountButton.contains(event.target)
+        ) {
+            accountMenu.classList.add("hidden");
+        }
+    });
+
+    // Mobile sidebar controls.
+    if (openSidebarButton) {
+        openSidebarButton.addEventListener("click", function (event) {
+            event.preventDefault();
+
+            if (sidebar) {
+                sidebar.classList.add("open");
+            }
+        });
+    }
+
+    if (closeSidebarButton) {
+        closeSidebarButton.addEventListener("click", function (event) {
+            event.preventDefault();
+
+            if (sidebar) {
+                sidebar.classList.remove("open");
+            }
+        });
+    }
+
+    // Load saved conversations.
+    loadRecentChats();
+
+    if (userInput) {
+        userInput.focus();
+    }
+
+    console.log("INGRES AI Assistant initialization complete.");
+});

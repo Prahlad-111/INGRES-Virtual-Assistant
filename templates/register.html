@@ -1,0 +1,174 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Create Account - INGRES AI Assistant</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+
+            <div class="auth-logo">
+                <div class="logo-circle">I</div>
+                <h1>INGRES AI</h1>
+                <p>Virtual Assistant</p>
+            </div>
+
+            <div class="auth-content">
+
+                <h2 id="form-title">Create Account</h2>
+
+                <p class="subtitle" id="form-subtitle">
+                    Create your account to get started
+                </p>
+
+                <!-- REGISTRATION FORM -->
+                <form id="register-form">
+
+                    <div id="registration-fields">
+
+                        <div class="form-group">
+                            <label for="name">Full Name</label>
+                            <input
+                                type="text"
+                                id="name"
+                                name="name"
+                                placeholder="Enter your name"
+                                autocomplete="name"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                placeholder="Enter your email"
+                                autocomplete="email"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                placeholder="Create a password"
+                                minlength="6"
+                                autocomplete="new-password"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirm-password">
+                                Confirm Password
+                            </label>
+                            <input
+                                type="password"
+                                id="confirm-password"
+                                name="confirm-password"
+                                placeholder="Confirm your password"
+                                minlength="6"
+                                autocomplete="new-password"
+                                required
+                            >
+                        </div>
+
+                    </div>
+
+                    <!-- EMAIL OTP VERIFICATION -->
+                    <div id="otp-section" hidden>
+
+                        <p>
+                            We have sent a verification code to
+                            <strong id="verification-email"></strong>.
+                            Enter the six-digit code below.
+                        </p>
+
+                        <div class="form-group">
+                            <label for="otp">Email Verification Code</label>
+
+                            <input
+                                type="text"
+                                id="otp"
+                                name="otp"
+                                placeholder="Enter 6-digit OTP"
+                                inputmode="numeric"
+                                pattern="[0-9]{6}"
+                                maxlength="6"
+                                autocomplete="one-time-code"
+                                aria-describedby="otp-help"
+                            >
+
+                            <small id="otp-help">
+                                The code expires after 10 minutes.
+                            </small>
+                        </div>
+
+                        <button type="button" id="verify-otp-button">
+                            Verify Email
+                        </button>
+
+                        <button
+                            type="button"
+                            id="resend-otp-button"
+                            style="margin-top: 10px;"
+                        >
+                            Resend Code
+                        </button>
+
+                        <button
+                            type="button"
+                            id="back-to-register-button"
+                            style="margin-top: 10px;"
+                        >
+                            Back to Registration
+                        </button>
+
+                    </div>
+
+                    <!-- REGISTER BUTTON -->
+                    <button
+                        type="submit"
+                        id="register-button"
+                    >
+                        Create Account
+                    </button>
+
+                    <!-- STATUS MESSAGE -->
+                    <div
+                        id="register-message"
+                        role="status"
+                        aria-live="polite"
+                    ></div>
+
+                </form>
+
+                <div class="auth-divider">
+                    <span>OR</span>
+                </div>
+
+                <p class="register-text">
+                    Already have an account?
+                    <a href="/login">Login</a>
+                </p>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+</body>
+</html>

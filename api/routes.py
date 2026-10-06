@@ -2,19 +2,22 @@ from flask import Blueprint, request, jsonify
 
 from chatbot.chatbot import get_response
 
-from database.database import (
+from database.mongodb import (
     create_conversation,
     add_message,
     get_conversations,
     get_messages,
+    get_user_conversation,
     delete_conversation,
     update_conversation_title
 )
 
+from api.auth import token_required
 
-# ==================================================
+
+# =========================================================
 # CREATE BLUEPRINT
-# ==================================================
+# =========================================================
 
 chatbot_api = Blueprint(
     "chatbot_api",
@@ -22,471 +25,416 @@ chatbot_api = Blueprint(
 )
 
 
-# ==================================================
+# =========================================================
 # CHAT API
-# ==================================================
+# =========================================================
 
-@chatbot_api.route(
-    "/chat",
-    methods=["POST"]
-)
+@chatbot_api.route("/chat", methods=["POST"])
+@token_required
 def chat():
 
     try:
 
         data = request.get_json()
 
-
-        # --------------------------------------------------
-        # CHECK DATA
-        # --------------------------------------------------
-
         if not data:
-
             return jsonify({
-
                 "success": False,
-
-                "message":
-                    "No data received."
-
+                "message": "No data received."
             }), 400
 
+        # -------------------------------------------------
+        # USER MESSAGE
+        # -------------------------------------------------
 
-        # --------------------------------------------------
-        # GET USER MESSAGE
-        # --------------------------------------------------
+        user_message = data.get("message", "")
 
-        user_message = data.get(
-            "message",
-            ""
-        )
-
-
-        if not user_message.strip():
-
+        if not isinstance(user_message, str):
             return jsonify({
-
                 "success": False,
-
-                "message":
-                    "Please enter a message."
-
+                "message": "Invalid message."
             }), 400
 
+        user_message = user_message.strip()
 
-        # --------------------------------------------------
-        # GET CONVERSATION ID
-        # --------------------------------------------------
+        if not user_message:
+            return jsonify({
+                "success": False,
+                "message": "Please enter a message."
+            }), 400
 
-        conversation_id = data.get(
-            "conversation_id"
-        )
+        # -------------------------------------------------
+        # LOGGED-IN USER
+        # -------------------------------------------------
 
+        user_id = request.user_id
 
-        # --------------------------------------------------
-        # GET CONVERSATION HISTORY
-        # --------------------------------------------------
+        # -------------------------------------------------
+        # CONVERSATION ID
+        # -------------------------------------------------
 
-        conversation_history = data.get(
-            "conversation_history",
-            []
-        )
+        conversation_id = data.get("conversation_id")
 
-
-        # --------------------------------------------------
-        # CREATE CONVERSATION IF NEEDED
-        # --------------------------------------------------
+        # -------------------------------------------------
+        # CREATE NEW CONVERSATION
+        # -------------------------------------------------
 
         if not conversation_id:
 
-            # Use first part of the message
-            # as the initial chat title.
-
-            title = user_message.strip()
-
+            title = user_message
 
             if len(title) > 40:
-
-                title = (
-                    title[:40]
-                    + "..."
-                )
-
+                title = title[:40] + "..."
 
             conversation_id = create_conversation(
+                user_id,
                 title
             )
 
+        else:
 
-        # --------------------------------------------------
-        # SAVE USER MESSAGE
-        # --------------------------------------------------
+            # Verify that this conversation belongs
+            # to the logged-in user.
 
-        add_message(
+            conversation = get_user_conversation(
+                conversation_id,
+                user_id
+            )
 
-            conversation_id,
+            if not conversation:
 
-            "user",
+                return jsonify({
+                    "success": False,
+                    "message": "Conversation not found."
+                }), 404
 
-            user_message
+        # -------------------------------------------------
+        # GET PREVIOUS CONVERSATION HISTORY
+        # -------------------------------------------------
 
+        old_messages = get_messages(
+            conversation_id
         )
 
+        conversation_history = []
 
-        # --------------------------------------------------
+        for item in old_messages:
+
+            role = item.get("role")
+
+            message = item.get(
+                "message",
+                ""
+            )
+
+            if role in ["user", "assistant"]:
+
+                conversation_history.append({
+                    "role": role,
+                    "message": message
+                })
+
+        # -------------------------------------------------
+        # SAVE USER MESSAGE
+        # -------------------------------------------------
+
+        add_message(
+            conversation_id,
+            "user",
+            user_message
+        )
+
+        # -------------------------------------------------
         # GET AI RESPONSE
-        # --------------------------------------------------
+        # -------------------------------------------------
 
         try:
 
             bot_response = get_response(
-
                 user_message,
-
                 conversation_history
-
             )
 
         except TypeError:
 
-            # Compatibility with an older
-            # get_response() that accepts
-            # only one argument.
+            # Compatibility with older chatbot code.
 
             bot_response = get_response(
                 user_message
             )
 
-
-        # --------------------------------------------------
+        # -------------------------------------------------
         # SAVE AI RESPONSE
-        # --------------------------------------------------
+        # -------------------------------------------------
 
         add_message(
-
             conversation_id,
-
             "assistant",
-
             bot_response
-
         )
 
-
-        # --------------------------------------------------
-        # RESPONSE
-        # --------------------------------------------------
+        # -------------------------------------------------
+        # RETURN RESPONSE
+        # -------------------------------------------------
 
         return jsonify({
-
             "success": True,
-
-            "conversation_id":
-                conversation_id,
-
-            "user_message":
-                user_message,
-
-            "response":
-                bot_response
-
+            "conversation_id": conversation_id,
+            "user_message": user_message,
+            "response": bot_response
         })
-
 
     except Exception as error:
 
         print(
-            "API Error:",
+            "[CHAT API ERROR]",
             error
         )
 
-
         return jsonify({
-
             "success": False,
-
-            "message":
-                "Something went wrong."
-
+            "message": "Something went wrong."
         }), 500
 
 
-# ==================================================
-# GET ALL CONVERSATIONS
-# ==================================================
+# =========================================================
+# GET RECENT CHATS
+# =========================================================
 
-@chatbot_api.route(
-    "/chats",
-    methods=["GET"]
-)
+@chatbot_api.route("/chats", methods=["GET"])
+@token_required
 def get_all_chats():
 
     try:
 
-        chats = get_conversations()
+        user_id = request.user_id
 
+        chats = get_conversations(
+            user_id
+        )
 
         return jsonify({
-
             "success": True,
-
-            "chats":
-                chats
-
+            "chats": chats
         })
-
 
     except Exception as error:
 
         print(
-            "Get chats error:",
+            "[GET CHATS ERROR]",
             error
         )
 
-
         return jsonify({
-
             "success": False,
-
-            "message":
-                "Unable to load chat history."
-
+            "message": "Unable to load chat history."
         }), 500
 
 
-# ==================================================
-# CREATE NEW CONVERSATION
-# ==================================================
+# =========================================================
+# CREATE NEW CHAT
+# =========================================================
 
-@chatbot_api.route(
-    "/chats",
-    methods=["POST"]
-)
+@chatbot_api.route("/chats", methods=["POST"])
+@token_required
 def create_new_chat():
 
     try:
 
         data = request.get_json() or {}
 
-
         title = data.get(
             "title",
             "New Chat"
         )
 
-
-        if not title.strip():
-
+        if not isinstance(title, str):
             title = "New Chat"
 
+        title = title.strip()
+
+        if not title:
+            title = "New Chat"
 
         conversation_id = create_conversation(
+            request.user_id,
             title
         )
 
-
         return jsonify({
-
             "success": True,
-
-            "conversation_id":
-                conversation_id,
-
-            "title":
-                title
-
+            "conversation_id": conversation_id,
+            "title": title
         }), 201
-
 
     except Exception as error:
 
         print(
-            "Create chat error:",
+            "[CREATE CHAT ERROR]",
             error
         )
 
-
         return jsonify({
-
             "success": False,
-
-            "message":
-                "Unable to create chat."
-
+            "message": "Unable to create chat."
         }), 500
 
 
-# ==================================================
-# GET MESSAGES FOR A CONVERSATION
-# ==================================================
+# =========================================================
+# OPEN CONVERSATION
+# =========================================================
 
 @chatbot_api.route(
-    "/chats/<int:conversation_id>",
+    "/chats/<conversation_id>",
     methods=["GET"]
 )
-def get_chat_messages(
-    conversation_id
-):
+@token_required
+def get_chat_messages(conversation_id):
 
     try:
+
+        conversation = get_user_conversation(
+            conversation_id,
+            request.user_id
+        )
+
+        if not conversation:
+
+            return jsonify({
+                "success": False,
+                "message": "Conversation not found."
+            }), 404
 
         messages = get_messages(
             conversation_id
         )
 
-
         return jsonify({
-
             "success": True,
-
-            "conversation_id":
-                conversation_id,
-
-            "messages":
-                messages
-
+            "conversation_id": conversation_id,
+            "title": conversation.get(
+                "title",
+                "New Chat"
+            ),
+            "messages": messages
         })
-
 
     except Exception as error:
 
         print(
-            "Get messages error:",
+            "[GET MESSAGES ERROR]",
             error
         )
 
-
         return jsonify({
-
             "success": False,
-
-            "message":
-                "Unable to load messages."
-
+            "message": "Unable to load messages."
         }), 500
 
 
-# ==================================================
+# =========================================================
 # DELETE CONVERSATION
-# ==================================================
+# =========================================================
 
 @chatbot_api.route(
-    "/chats/<int:conversation_id>",
+    "/chats/<conversation_id>",
     methods=["DELETE"]
 )
-def remove_chat(
-    conversation_id
-):
+@token_required
+def remove_chat(conversation_id):
 
     try:
 
-        delete_conversation(
-            conversation_id
+        deleted = delete_conversation(
+            conversation_id,
+            request.user_id
         )
 
+        if not deleted:
+
+            return jsonify({
+                "success": False,
+                "message": "Chat not found."
+            }), 404
 
         return jsonify({
-
             "success": True,
-
-            "message":
-                "Chat deleted successfully."
-
+            "message": "Chat deleted successfully."
         })
-
 
     except Exception as error:
 
         print(
-            "Delete chat error:",
+            "[DELETE CHAT ERROR]",
             error
         )
 
-
         return jsonify({
-
             "success": False,
-
-            "message":
-                "Unable to delete chat."
-
+            "message": "Unable to delete chat."
         }), 500
 
 
-# ==================================================
-# UPDATE CHAT TITLE
-# ==================================================
+# =========================================================
+# RENAME CONVERSATION
+# =========================================================
 
 @chatbot_api.route(
-    "/chats/<int:conversation_id>",
+    "/chats/<conversation_id>",
     methods=["PUT"]
 )
-def rename_chat(
-    conversation_id
-):
+@token_required
+def rename_chat(conversation_id):
 
     try:
 
         data = request.get_json() or {}
 
-
         title = data.get(
             "title",
             ""
-        ).strip()
+        )
 
+        if not isinstance(title, str):
+            title = ""
+
+        title = title.strip()
 
         if not title:
 
             return jsonify({
-
                 "success": False,
-
-                "message":
-                    "Chat title cannot be empty."
-
+                "message": "Chat title cannot be empty."
             }), 400
 
-
-        update_conversation_title(
-
+        updated = update_conversation_title(
             conversation_id,
-
+            request.user_id,
             title
-
         )
 
+        if not updated:
+
+            return jsonify({
+                "success": False,
+                "message": "Chat not found."
+            }), 404
 
         return jsonify({
-
             "success": True,
-
-            "message":
-                "Chat renamed successfully.",
-
-            "conversation_id":
-                conversation_id,
-
-            "title":
-                title
-
+            "message": "Chat renamed successfully.",
+            "conversation_id": conversation_id,
+            "title": title
         })
-
 
     except Exception as error:
 
         print(
-            "Rename chat error:",
+            "[RENAME CHAT ERROR]",
             error
         )
 
-
         return jsonify({
-
             "success": False,
-
-            "message":
-                "Unable to rename chat."
-
+            "message": "Unable to rename chat."
         }), 500

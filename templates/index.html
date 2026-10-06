@@ -11,6 +11,10 @@
     >
 
     <title>INGRES AI Virtual Assistant</title>
+<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <!-- ==================================================
+         MAIN CSS
+         ================================================== -->
 
     <link
         rel="stylesheet"
@@ -36,9 +40,12 @@
     >
 
 
-        <!-- Sidebar Header -->
+        <!-- ==================================================
+             SIDEBAR HEADER
+             ================================================== -->
 
         <div class="sidebar-header">
+
 
             <div class="sidebar-title">
 
@@ -53,6 +60,8 @@
             </div>
 
 
+            <!-- Mobile Close Button -->
+
             <button
                 id="close-sidebar-button"
                 class="icon-button mobile-only"
@@ -62,7 +71,9 @@
                 ✕
             </button>
 
+
         </div>
+
 
 
         <!-- ==================================================
@@ -74,24 +85,136 @@
             class="recent-chat-list"
         >
 
-            <!-- Recent chats are added by JavaScript -->
+            <!--
+                Recent chats are loaded
+                automatically by script.js
+            -->
 
         </div>
 
 
-        <!-- Sidebar Footer -->
+
+        <!-- ==================================================
+             SIDEBAR FOOTER
+             ================================================== -->
 
         <div class="sidebar-footer">
 
-            <span>
-                INGRES AI
-            </span>
 
-            <span>
-                Virtual Assistant
-            </span>
+            <!-- ==================================================
+                 ACCOUNT
+                 ================================================== -->
+
+            <div class="account-wrapper">
+
+
+                <!-- Account Button -->
+
+                <button
+                    id="account-button"
+                    class="account-button"
+                    type="button"
+                >
+
+                    <span>
+                        👤
+                    </span>
+
+                    <span id="account-name">
+                        Account
+                    </span>
+
+                </button>
+
+
+
+                <!-- ==================================================
+                     ACCOUNT MENU
+                     ================================================== -->
+
+                <div
+                    id="account-menu"
+                    class="account-menu hidden"
+                >
+
+
+                    <!-- User Information -->
+
+                    <div class="account-info">
+
+
+                        <strong
+                            id="account-display-name"
+                        >
+                            User
+                        </strong>
+
+
+                        <span
+                            id="account-display-email"
+                        >
+                            user@email.com
+                        </span>
+
+
+                    </div>
+
+
+
+                    <!-- Login With Another Account -->
+
+                    <button
+                        id="switch-account-button"
+                        type="button"
+                    >
+
+                        🔄 Login with another account
+
+                    </button>
+
+
+
+                    <!-- Logout -->
+
+                    <button
+                        id="logout-button"
+                        type="button"
+                    >
+
+                        🚪 Logout
+
+                    </button>
+
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- ==================================================
+                 SIDEBAR FOOTER TEXT
+                 ================================================== -->
+
+            <div class="sidebar-footer-text">
+
+
+                <span>
+                    INGRES AI
+                </span>
+
+
+                <span>
+                    Virtual Assistant
+                </span>
+
+
+            </div>
+
 
         </div>
+
 
     </aside>
 
@@ -104,12 +227,17 @@
     <main class="chat-container">
 
 
+
         <!-- ==================================================
              HEADER
              ================================================== -->
 
         <header class="chat-header">
 
+
+            <!-- ==================================================
+                 HEADER LEFT
+                 ================================================== -->
 
             <div class="header-left">
 
@@ -122,20 +250,27 @@
                     type="button"
                     title="Recent Chats"
                 >
+
                     ☰
+
                 </button>
+
 
 
                 <!-- Bot Avatar -->
 
                 <div class="bot-avatar">
+
                     🤖
+
                 </div>
+
 
 
                 <!-- Header Information -->
 
                 <div class="header-info">
+
 
                     <h2>
                         INGRES AI Assistant
@@ -144,24 +279,31 @@
 
                     <div class="online-status">
 
+
                         <span class="online-dot"></span>
+
 
                         Online
 
+
                     </div>
 
+
                 </div>
+
 
             </div>
 
 
 
             <!-- ==================================================
-                 NEW CHAT MENU
+                 NEW CHAT
                  ================================================== -->
 
             <div class="new-chat-wrapper">
 
+
+                <!-- New Chat Button -->
 
                 <button
                     id="new-chat-button"
@@ -174,21 +316,31 @@
                 </button>
 
 
+
+                <!-- ==================================================
+                     NEW CHAT MENU
+                     ================================================== -->
+
                 <div
                     id="new-chat-menu"
                     class="new-chat-menu hidden"
                 >
 
 
+                    <!-- Clear Chat -->
+
                     <button
-                        id="clear-messages-button"
+                        id="clear-chat-button"
                         type="button"
                     >
 
-                        🧹 Clear Messages
+                        🧹 Clear Chat
 
                     </button>
 
+
+
+                    <!-- Clear Conversation Memory -->
 
                     <button
                         id="clear-memory-button"
@@ -200,6 +352,9 @@
                     </button>
 
 
+
+                    <!-- Start Fresh -->
+
                     <button
                         id="start-fresh-button"
                         type="button"
@@ -209,9 +364,12 @@
 
                     </button>
 
+
                 </div>
 
+
             </div>
+
 
         </header>
 
@@ -227,34 +385,54 @@
         >
 
 
-            <!-- Initial Welcome Message -->
+            <!-- ==================================================
+                 INITIAL WELCOME MESSAGE
+                 ================================================== -->
 
             <div class="message bot-message">
 
 
+                <!-- Bot Icon -->
+
                 <div class="message-icon">
+
                     🤖
+
                 </div>
 
+
+
+                <!-- Message Content -->
 
                 <div class="message-content">
 
 
+                    <!-- Name -->
+
                     <div class="message-name">
+
                         INGRES Assistant
+
                     </div>
 
 
+
+                    <!-- Message -->
+
                     <div class="message-text">
 
+
                         <p>
+
                             Hello! 👋
+
                         </p>
 
 
                         <p>
 
                             Welcome to the
+
                             <strong>
                                 INGRES AI Virtual Assistant
                             </strong>.
@@ -264,25 +442,19 @@
 
                         <p>
 
-                            I can help you with
-                            INGRES, groundwater,
-                            programming, education,
-                            calculations, technical
-                            problems, and general
-                            questions.
-
-                        </p>
-
-
-                        <p>
                             How can I help you today?
+
                         </p>
+
 
                     </div>
 
+
                 </div>
 
+
             </div>
+
 
         </div>
 
@@ -297,27 +469,45 @@
             class="typing-container hidden"
         >
 
+
+            <!-- Bot Icon -->
+
             <div class="message-icon">
+
                 🤖
+
             </div>
 
 
+
+            <!-- Typing Content -->
+
             <div class="typing-content">
 
+
                 <div class="message-name">
+
                     INGRES Assistant
+
                 </div>
+
 
 
                 <div class="typing-bubble">
 
+
                     <span></span>
+
                     <span></span>
+
                     <span></span>
+
 
                 </div>
 
+
             </div>
+
 
         </div>
 
@@ -330,6 +520,8 @@
         <div class="chat-input-area">
 
 
+            <!-- User Input -->
+
             <input
                 type="text"
                 id="user-input"
@@ -337,6 +529,9 @@
                 autocomplete="off"
             >
 
+
+
+            <!-- Send Button -->
 
             <button
                 id="send-button"
@@ -346,6 +541,7 @@
                 Send
 
             </button>
+
 
         </div>
 
@@ -357,8 +553,13 @@
 
 
 
+<!-- ==================================================
+     JAVASCRIPT
+     ================================================== -->
+
 <script
     src="{{ url_for('static', filename='js/script.js') }}"
+    defer
 ></script>
 
 

@@ -1,0 +1,349 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    min-height: 100vh;
+
+    background: linear-gradient(
+        135deg,
+        #0f172a,
+        #1e3a8a,
+        #2563eb
+    );
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 430px;
+}
+
+.auth-card {
+    background: white;
+    border-radius: 20px;
+    padding: 35px;
+
+    box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.auth-logo {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.logo-circle {
+    width: 65px;
+    height: 65px;
+
+    margin: 0 auto 12px;
+
+    border-radius: 50%;
+
+    background: linear-gradient(
+        135deg,
+        #2563eb,
+        #4f46e5
+    );
+
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.auth-logo h1 {
+    font-size: 25px;
+    color: #111827;
+}
+
+.auth-logo p {
+    margin-top: 5px;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.auth-content h2 {
+    text-align: center;
+    color: #111827;
+    font-size: 24px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #6b7280;
+    font-size: 14px;
+    margin-top: 8px;
+    margin-bottom: 25px;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #374151;
+
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.form-group input {
+    width: 100%;
+
+    padding: 13px 14px;
+
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+
+    font-size: 15px;
+
+    outline: none;
+
+    transition: 0.2s;
+}
+
+.form-group input:focus {
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+#login-button {
+    width: 100%;
+
+    padding: 13px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: linear-gradient(
+        135deg,
+        #2563eb,
+        #4f46e5
+    );
+
+    color: white;
+
+    font-size: 16px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+#login-button:hover {
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 8px 20px rgba(37, 99, 235, 0.3);
+}
+
+#login-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#login-message {
+    margin-top: 15px;
+
+    text-align: center;
+
+    font-size: 14px;
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+
+    margin: 25px 0;
+
+    color: #9ca3af;
+
+    font-size: 12px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: "";
+
+    flex: 1;
+
+    height: 1px;
+
+    background: #e5e7eb;
+}
+
+.auth-divider span {
+    padding: 0 12px;
+}
+
+.register-text {
+    text-align: center;
+
+    color: #6b7280;
+
+    font-size: 14px;
+}
+
+.register-text a {
+    color: #2563eb;
+
+    font-weight: 600;
+
+    text-decoration: none;
+}
+
+.register-text a:hover {
+    text-decoration: underline;
+}
+
+/* ========================================
+   PROFESSIONAL AUTHENTICATION BUTTONS
+   INGRES AI Virtual Assistant
+======================================== */
+
+button,
+input[type="submit"],
+input[type="button"] {
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        background 0.25s ease,
+        box-shadow 0.25s ease,
+        transform 0.2s ease;
+}
+
+/* Main form buttons: Send Reset Code,
+   Reset Password, Create Account, Login */
+
+form button[type="submit"],
+form button:not([type]),
+form input[type="submit"],
+button[type="submit"] {
+    display: block;
+    width: 100%;
+    min-height: 48px;
+    padding: 13px 20px;
+    margin-top: 18px;
+
+    color: #ffffff;
+    background: linear-gradient(135deg, #315efb, #1742c5);
+
+    border: none;
+    border-radius: 12px;
+
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+
+    box-shadow: 0 5px 14px rgba(49, 94, 251, 0.25);
+
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+/* Hover effect */
+
+form button[type="submit"]:hover,
+form button:not([type]):hover,
+form input[type="submit"]:hover,
+button[type="submit"]:hover {
+    background: linear-gradient(135deg, #244ce0, #1035a5);
+    box-shadow: 0 8px 20px rgba(49, 94, 251, 0.35);
+    transform: translateY(-2px);
+}
+
+/* Click effect */
+
+form button[type="submit"]:active,
+form button:not([type]):active,
+form input[type="submit"]:active,
+button[type="submit"]:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 8px rgba(49, 94, 251, 0.2);
+}
+
+/* Keyboard accessibility */
+
+form button:focus-visible,
+form input[type="submit"]:focus-visible {
+    outline: 3px solid rgba(49, 94, 251, 0.35);
+    outline-offset: 3px;
+}
+
+/* Disabled/loading buttons */
+
+form button:disabled,
+form input[type="submit"]:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Back to Login link */
+
+a[href="/login"] {
+    display: inline-block;
+    margin-top: 12px;
+    color: #315efb;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a[href="/login"]:hover {
+    color: #1742c5;
+    text-decoration: underline;
+}
+
+/* Create Account / Register links */
+
+a[href="/register"] {
+    color: #315efb;
+    font-weight: 700;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a[href="/register"]:hover {
+    color: #1742c5;
+    text-decoration: underline;
+}
+
+/* Mobile-friendly buttons */
+
+@media (max-width: 480px) {
+    form button[type="submit"],
+    form button:not([type]),
+    form input[type="submit"],
+    button[type="submit"] {
+        min-height: 46px;
+        font-size: 14px;
+        border-radius: 10px;
+    }
+}

@@ -41,17 +41,20 @@ MODEL_NAME = "openai/gpt-oss-120b"
 
 
 # ==================================================
-# SYSTEM PROMPT
+# PROFESSIONAL INGRES AI SYSTEM PROMPT
 # ==================================================
 
 SYSTEM_PROMPT = """
-You are INGRES AI, an intelligent and helpful virtual assistant.
+You are INGRES AI, a professional, intelligent, accurate,
+and helpful virtual assistant.
 
-You are NOT limited to groundwater questions.
+You are the general-purpose AI assistant inside the INGRES AI
+Virtual Assistant project.
 
-You can help users with:
+You can help with:
 
-- General knowledge
+- INGRES and groundwater
+- Groundwater resources
 - Artificial Intelligence
 - Machine Learning
 - Deep Learning
@@ -72,23 +75,304 @@ You can help users with:
 - College and academic questions
 - Project development
 - Debugging
-- Writing and explanations
 - Technology
-- INGRES and groundwater information
+- General knowledge
+- Writing and explanations
 - Everyday questions
 
-Give clear, accurate and useful answers.
 
-Use simple language when the user asks for a simple explanation.
+==================================================
+PROFESSIONAL ANSWER STYLE
+==================================================
 
-If the user asks for programming code, provide complete and working code
-and briefly explain how it works.
+Always give answers in a clear, professional and organized
+structure.
 
-If the user asks a technical question, explain the solution step by step.
+Do not write one large unstructured paragraph.
 
-Do not unnecessarily restrict your answers to groundwater or INGRES.
+Use Markdown formatting when appropriate.
 
-You are the general-purpose AI assistant inside the INGRES AI project.
+Use:
+
+- Clear headings
+- Subheadings
+- Bullet points
+- Numbered steps
+- Short paragraphs
+- Tables for comparisons
+- Code blocks for programming code
+- Formulas for mathematical problems
+- Examples when useful
+- A short conclusion or key takeaway when appropriate
+
+
+==================================================
+ANSWER STRUCTURE
+==================================================
+
+Choose the structure based on the user's question.
+
+Do NOT force every section into every answer.
+
+For a definition question:
+
+### Definition
+
+Give a clear definition.
+
+### Key Points
+
+- Point 1
+- Point 2
+- Point 3
+
+### Example
+
+Give a simple example if useful.
+
+### Key Takeaway
+
+Give the main idea in one or two sentences.
+
+
+For an explanation question:
+
+### Explanation
+
+Explain the concept clearly.
+
+### How It Works
+
+1. Step one
+2. Step two
+3. Step three
+
+### Example
+
+Give an appropriate example.
+
+### Key Takeaway
+
+Summarize the important point.
+
+
+For technical questions:
+
+### Problem
+
+Briefly identify the problem.
+
+### Solution
+
+Explain the solution.
+
+### Steps
+
+1. Step one
+2. Step two
+3. Step three
+
+### Important Notes
+
+Mention important considerations.
+
+### Conclusion
+
+Give a concise conclusion.
+
+
+For programming questions:
+
+### Solution
+
+Provide complete and working code.
+
+Use a proper code block with the correct language.
+
+### Explanation
+
+Explain the important parts of the code.
+
+### How to Run
+
+Give the required commands when useful.
+
+### Expected Output
+
+Show an example output when appropriate.
+
+### Key Takeaway
+
+Briefly summarize the solution.
+
+
+For comparison questions:
+
+### Comparison
+
+Use a Markdown table.
+
+| Feature | Option A | Option B |
+|---|---|---|
+| Feature 1 | ... | ... |
+| Feature 2 | ... | ... |
+
+### Key Difference
+
+Explain the main difference.
+
+### Conclusion
+
+State which option is appropriate when relevant.
+
+
+For mathematical questions:
+
+### Given
+
+List the known values.
+
+### Formula
+
+Show the formula.
+
+### Calculation
+
+Show the calculation step by step.
+
+### Answer
+
+Clearly state the final answer.
+
+Do not unnecessarily explain basic arithmetic.
+
+
+For step-by-step questions:
+
+### Steps
+
+1. **Step 1:** ...
+2. **Step 2:** ...
+3. **Step 3:** ...
+
+### Result
+
+State the result.
+
+
+For academic questions:
+
+### Answer
+
+Give the direct answer.
+
+### Explanation
+
+Explain the concept in simple academic language.
+
+### Example
+
+Give an example if useful.
+
+### Key Points
+
+- Important point
+- Important point
+- Important point
+
+
+==================================================
+LANGUAGE
+==================================================
+
+Use simple and understandable language unless the user
+specifically requests advanced or technical language.
+
+For students, explain difficult concepts in an
+exam-friendly manner.
+
+Avoid unnecessarily complicated vocabulary.
+
+If the user asks for a short answer, keep the answer short.
+
+If the user asks for detailed information, provide a
+well-structured detailed answer.
+
+
+==================================================
+PROGRAMMING RULES
+==================================================
+
+When providing programming code:
+
+- Provide complete working code whenever possible.
+- Use Markdown code blocks.
+- Mention the programming language.
+- Explain important sections.
+- Do not provide incomplete code unless the user asks for
+  only a specific portion.
+- Preserve the user's existing project structure when
+  modifying project code.
+- Clearly identify which file should be changed when
+  relevant.
+
+
+==================================================
+ACCURACY
+==================================================
+
+Do not invent facts.
+
+If information is uncertain or unavailable, clearly say so.
+
+For calculations, verify the result carefully.
+
+For technical solutions, provide practical and safe steps.
+
+
+==================================================
+INGRES / GROUNDWATER
+==================================================
+
+When answering INGRES or groundwater-related questions,
+use the available INGRES data when provided by the application.
+
+Do not invent groundwater statistics.
+
+If specific data is unavailable, clearly state that the
+information is not available from the current INGRES dataset.
+
+
+==================================================
+CONVERSATION
+==================================================
+
+Use previous conversation context when it is provided.
+
+Maintain continuity with the user's previous questions.
+
+Do not unnecessarily repeat information already explained.
+
+If the user asks a follow-up question, answer it in the
+context of the previous discussion.
+
+
+==================================================
+IMPORTANT
+==================================================
+
+Do not unnecessarily restrict answers to groundwater or INGRES.
+
+You are a general-purpose AI assistant inside the INGRES AI
+project.
+
+Always prioritize:
+
+1. Accuracy
+2. Clarity
+3. Professional structure
+4. Practical usefulness
+5. Concise communication when possible
 """
 
 
@@ -116,24 +400,24 @@ def ask_groq(
     """
 
 
-    # --------------------------------------------------
-    # CHECK API CLIENT
-    # --------------------------------------------------
+    # ==================================================
+    # CHECK CLIENT
+    # ==================================================
 
     if client is None:
 
         return (
+            "### AI Service Unavailable\n\n"
             "Groq AI is not configured.\n\n"
-            "Please check the GROQ_API_KEY "
-            "in your .env file."
+            "Please check the `GROQ_API_KEY` in your `.env` file."
         )
 
 
     try:
 
-        # --------------------------------------------------
-        # CREATE MESSAGE LIST
-        # --------------------------------------------------
+        # ==================================================
+        # MESSAGE LIST
+        # ==================================================
 
         messages = [
 
@@ -145,9 +429,9 @@ def ask_groq(
         ]
 
 
-        # --------------------------------------------------
-        # ADD PREVIOUS CONVERSATION
-        # --------------------------------------------------
+        # ==================================================
+        # PREVIOUS CONVERSATION
+        # ==================================================
 
         if conversation_history:
 
@@ -157,6 +441,7 @@ def ask_groq(
                     item,
                     dict
                 ):
+
                     continue
 
 
@@ -175,22 +460,17 @@ def ask_groq(
                     continue
 
 
-                # User message
-
                 if role == "user":
 
                     messages.append({
 
                         "role": "user",
 
-                        "content": str(
-                            message
-                        )
+                        "content":
+                            str(message)
 
                     })
 
-
-                # Assistant message
 
                 elif role in (
                     "assistant",
@@ -201,31 +481,29 @@ def ask_groq(
 
                         "role": "assistant",
 
-                        "content": str(
-                            message
-                        )
+                        "content":
+                            str(message)
 
                     })
 
 
-        # --------------------------------------------------
-        # ADD CURRENT USER MESSAGE
-        # --------------------------------------------------
+        # ==================================================
+        # CURRENT USER MESSAGE
+        # ==================================================
 
         messages.append({
 
             "role": "user",
 
-            "content": str(
-                user_message
-            )
+            "content":
+                str(user_message)
 
         })
 
 
-        # --------------------------------------------------
-        # SEND REQUEST TO GROQ
-        # --------------------------------------------------
+        # ==================================================
+        # GROQ REQUEST
+        # ==================================================
 
         response = client.chat.completions.create(
 
@@ -233,21 +511,22 @@ def ask_groq(
 
             messages=messages,
 
-            temperature=0.7,
+            temperature=0.6,
 
             max_tokens=2048
 
         )
 
 
-        # --------------------------------------------------
-        # GET RESPONSE
-        # --------------------------------------------------
+        # ==================================================
+        # CHECK RESPONSE
+        # ==================================================
 
         if not response.choices:
 
             return (
-                "I couldn't generate a response. "
+                "### Unable to Generate Response\n\n"
+                "I couldn't generate a response right now.\n\n"
                 "Please try again."
             )
 
@@ -263,7 +542,8 @@ def ask_groq(
         if not answer:
 
             return (
-                "I couldn't generate a response. "
+                "### Unable to Generate Response\n\n"
+                "I couldn't generate a response right now.\n\n"
                 "Please try again."
             )
 
@@ -288,9 +568,9 @@ def ask_groq(
         )
 
 
-        # --------------------------------------------------
-        # RATE LIMIT / QUOTA
-        # --------------------------------------------------
+        # ==================================================
+        # RATE LIMIT
+        # ==================================================
 
         if (
 
@@ -314,16 +594,15 @@ def ask_groq(
         ):
 
             return (
-                "Groq AI is temporarily unavailable "
-                "because the API rate limit has been "
-                "reached.\n\n"
+                "### Groq AI Temporarily Unavailable\n\n"
+                "The Groq API rate limit has been reached.\n\n"
                 "Please wait a little while and try again."
             )
 
 
-        # --------------------------------------------------
+        # ==================================================
         # INVALID API KEY
-        # --------------------------------------------------
+        # ==================================================
 
         if (
 
@@ -347,15 +626,16 @@ def ask_groq(
         ):
 
             return (
+                "### API Authentication Error\n\n"
                 "The Groq API key is invalid or "
                 "not configured correctly.\n\n"
-                "Please check your .env file."
+                "Please check your `.env` file."
             )
 
 
-        # --------------------------------------------------
+        # ==================================================
         # MODEL NOT FOUND
-        # --------------------------------------------------
+        # ==================================================
 
         if (
 
@@ -374,15 +654,16 @@ def ask_groq(
         ):
 
             return (
-                "The selected Groq AI model is not "
-                "available for this API key.\n\n"
-                "Please check the available Groq models."
+                "### AI Model Unavailable\n\n"
+                "The selected Groq AI model is not available "
+                "for this API key.\n\n"
+                "Please check the configured Groq model."
             )
 
 
-        # --------------------------------------------------
+        # ==================================================
         # CONNECTION ERROR
-        # --------------------------------------------------
+        # ==================================================
 
         if (
 
@@ -397,19 +678,20 @@ def ask_groq(
         ):
 
             return (
+                "### Connection Error\n\n"
                 "I couldn't connect to Groq AI.\n\n"
                 "Please check your internet connection "
                 "and try again."
             )
 
 
-        # --------------------------------------------------
+        # ==================================================
         # GENERAL ERROR
-        # --------------------------------------------------
+        # ==================================================
 
         return (
-            "I'm currently unable to connect to "
-            "Groq AI.\n\n"
+            "### AI Service Error\n\n"
+            "I'm currently unable to connect to Groq AI.\n\n"
             "Please try again later."
         )
 
@@ -426,27 +708,18 @@ def ask_gemini(
     """
     Compatibility function.
 
-    Your existing chatbot may still call:
-
-        ask_gemini()
-
-    We keep this function so you don't have to
-    immediately modify every existing file.
-
-    Internally it now uses Groq.
+    Existing chatbot code may still call ask_gemini().
+    Internally this now uses Groq.
     """
 
     return ask_groq(
-
         user_message,
-
         conversation_history
-
     )
 
 
 # ==================================================
-# TEST FUNCTION
+# TEST
 # ==================================================
 
 if __name__ == "__main__":
