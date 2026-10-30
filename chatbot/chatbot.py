@@ -257,10 +257,12 @@ GREETING_MESSAGES = {
     "hiii",
     "helo",
     "helloo",
+    "hlw",
 
     "good morning",
     "good afternoon",
-    "good evening"
+    "good evening",
+    "good night",
 }
 
 

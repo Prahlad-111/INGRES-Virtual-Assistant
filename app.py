@@ -37,21 +37,31 @@ app.register_blueprint(auth_bp)
 # PAGE ROUTES
 # ==============================
 
+# Landing page
 @app.route("/")
 def home():
+    return render_template("landing.html")
+
+
+# Chatbot dashboard
+@app.route("/chat")
+def chat_page():
     return render_template("index.html")
 
 
+# Login page
 @app.route("/login")
 def login_page():
     return render_template("login.html")
 
 
+# Registration page
 @app.route("/register")
 def register_page():
     return render_template("register.html")
 
 
+# Forgot password page
 @app.route("/forgot-password")
 def forgot_password_page():
     return render_template("forgot_password.html")
@@ -73,12 +83,13 @@ def health():
 # RUN SERVER
 # ==============================
 
-
 if __name__ == "__main__":
     print("\n======================================")
     print("       INGRES AI CHATBOT SERVER")
     print("======================================")
     print("Home:   http://127.0.0.1:5000/")
+    print("Login:  http://127.0.0.1:5000/login")
+    print("Chat:   http://127.0.0.1:5000/chat")
     print("Health: http://127.0.0.1:5000/health")
     print("======================================\n")
 
@@ -87,4 +98,3 @@ if __name__ == "__main__":
         port=int(os.environ.get("PORT", 5000)),
         debug=False
     )
-

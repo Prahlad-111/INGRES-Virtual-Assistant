@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INGRES AI | Virtual Assistant</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/landing.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="/" class="logo">INGRES<span>AI</span></a>
+
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#about">About</a>
+            <a href="/login" class="nav-login">Login</a>
+            <a href="/register" class="nav-register">Get Started</a>
+        </div>
+    </nav>
+
+    <main class="hero">
+        <div class="hero-content">
+            <div class="tag">YOUR INTELLIGENT AI ASSISTANT</div>
+
+            <h1>
+                Ask Anything.<br>
+                <span>Discover More.</span>
+            </h1>
+
+            <p>
+                Welcome to INGRES AI Virtual Assistant.
+                Get intelligent answers, explore information,
+                and solve problems through a simple conversation.
+            </p>
+
+            <div class="hero-buttons">
+                <a href="/login" class="primary-btn" id="start-button">
+                    Start Chatting →
+                </a>
+                <a href="#features" class="secondary-btn">
+                    Explore Features
+                </a>
+            </div>
+
+            <div class="trust-text">
+                <span>✦</span> Smart Conversations
+                <span>✦</span> Easy to Use
+                <span>✦</span> Secure Login
+            </div>
+        </div>
+
+        <div class="hero-visual">
+            <div class="glow"></div>
+
+            <div class="ai-card">
+                <div class="card-top">
+                    <div class="ai-icon">✦</div>
+                    <div>
+                        <h3>INGRES AI</h3>
+                        <small>Virtual Assistant</small>
+                    </div>
+                    <span class="online-dot"></span>
+                </div>
+
+                <div class="chat-preview">
+                    <div class="bot-message">
+                        Hello! 👋<br>
+                        I'm INGRES AI. How can I help you today?
+                    </div>
+
+                    <div class="user-message">
+                        Tell me something interesting.
+                    </div>
+
+                    <div class="bot-message">
+                        Absolutely! Ask me anything and let's explore
+                        something new together.
+                    </div>
+                </div>
+
+                <div class="fake-input">
+                    <span>Ask INGRES AI anything...</span>
+                    <span class="send-icon">➤</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <section class="features" id="features">
+        <div class="section-heading">
+            <span>WHAT YOU CAN DO</span>
+            <h2>Explore the possibilities</h2>
+        </div>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">✦</div>
+                <h3>AI Conversations</h3>
+                <p>Ask questions and receive helpful AI-generated responses.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⌕</div>
+                <h3>Smart Assistance</h3>
+                <p>Explore information and get assistance with different topics.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">◷</div>
+                <h3>Chat History</h3>
+                <p>Continue previous conversations with saved chat history.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="about" id="about">
+        <h2>Meet your intelligent assistant.</h2>
+        <p>
+            INGRES AI brings AI-powered assistance into one simple
+            and user-friendly platform.
+        </p>
+        <a href="/register" class="primary-btn">Create Your Account →</a>
+    </section>
+
+    <footer>
+        © 2026 INGRES AI Virtual Assistant. All rights reserved.
+    </footer>
+
+    <script>
+        // Send already logged-in users directly to the chatbot.
+        const token = localStorage.getItem("ingres_token");
+
+        if (token) {
+            const startButton = document.getElementById("start-button");
+            startButton.href = "/chat";
+            startButton.textContent = "Open Dashboard →";
+        }
+    </script>
+
+</body>
+</html>

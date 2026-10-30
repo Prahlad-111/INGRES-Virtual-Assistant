@@ -87,7 +87,7 @@ function setupLogin() {
                 }
 
                 showMessage(message, "Login successful!", "green");
-                window.location.href = "/";
+                window.location.href = "/chat";
             } else {
                 showMessage(
                     message,
