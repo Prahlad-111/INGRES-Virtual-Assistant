@@ -280,22 +280,17 @@ function showLoginTab() {
 function showLoginOnlyScreen() {
     showLoginScreen();
 
-    createTab.style.display = "none";
-    loginTab.style.display = "none";
+    // Hide both account tabs.
+    createTab.style.setProperty("display", "none", "important");
+    loginTab.style.setProperty("display", "none", "important");
 
-    createAccountForm.style.display = "none";
-    loginAccountForm.style.display = "block";
+    // Hide account creation and show the actual login form.
+    createAccountForm.style.setProperty("display", "none", "important");
+    loginAccountForm.style.setProperty("display", "block", "important");
 
-    secretIdResult.style.display = "none";
+    // Reset the login screen.
+    secretIdResult.style.setProperty("display", "none", "important");
     authMessage.textContent = "";
-
-    if (loginName) {
-        loginName.value = "";
-    }
-
-    if (authSecretId) {
-        authSecretId.value = "";
-    }
 }
 
 
