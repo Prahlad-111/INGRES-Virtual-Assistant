@@ -70,7 +70,18 @@ except Exception as error:
         error
     )
 
+# =========================================================
+# CREATE UNIQUE SECRET ID INDEX
+# =========================================================
 
+try:
+    users_collection.create_index(
+        "secret_id_hash",
+        unique=True,
+        sparse=True
+    )
+except Exception as error:
+    print("[SECRET ID INDEX WARNING]", error)
 # =========================================================
 # TEST MONGODB CONNECTION
 # =========================================================
@@ -814,3 +825,194 @@ def update_user_password(email, new_password):
     except Exception as error:
         print("[PASSWORD UPDATE ERROR]", error)
         return False
+
+# =========================================================
+# ANONYMOUS VISITOR CHAT FUNCTIONS
+# =========================================================
+
+def create_visitor_conversation(visitor_id, title="New Chat"):
+    now = datetime.now(timezone.utc)
+
+    document = {
+        "visitor_id": visitor_id,
+        "title": title,
+        "created_at": now,
+        "updated_at": now
+    }
+
+    result = conversations_collection.insert_one(document)
+
+    return str(result.inserted_id)
+
+
+def get_visitor_conversation(conversation_id, visitor_id):
+    try:
+        return conversations_collection.find_one({
+            "_id": ObjectId(conversation_id),
+            "visitor_id": visitor_id
+        })
+    except Exception:
+        return None
+
+
+def get_visitor_conversations(visitor_id):
+    conversations = (
+        conversations_collection
+        .find({"visitor_id": visitor_id})
+        .sort("updated_at", DESCENDING)
+    )
+
+    result = []
+
+    for conversation in conversations:
+        result.append({
+            "id": str(conversation["_id"]),
+            "title": conversation.get("title", "New Chat"),
+            "created_at": format_datetime(
+                conversation.get("created_at")
+            ),
+            "updated_at": format_datetime(
+                conversation.get("updated_at")
+            )
+        })
+
+    return result
+
+
+def delete_visitor_conversation(conversation_id, visitor_id):
+    conversation = get_visitor_conversation(
+        conversation_id, visitor_id
+    )
+
+    if not conversation:
+        return False
+
+    object_id = ObjectId(conversation_id)
+
+    conversations_collection.delete_one({
+        "_id": object_id,
+        "visitor_id": visitor_id
+    })
+
+    messages_collection.delete_many({
+        "conversation_id": object_id
+    })
+
+    return True
+
+
+def update_visitor_conversation_title(
+    conversation_id, visitor_id, title
+):
+    conversation = get_visitor_conversation(
+        conversation_id, visitor_id
+    )
+
+    if not conversation:
+        return False
+
+    conversations_collection.update_one(
+        {
+            "_id": ObjectId(conversation_id),
+            "visitor_id": visitor_id
+        },
+        {
+            "$set": {
+                "title": title,
+                "updated_at": datetime.now(timezone.utc)
+            }
+        }
+    )
+
+    return True
+
+# =========================================================
+# INGRES SECRET ID ACCOUNT SYSTEM
+# =========================================================
+
+import secrets
+import hashlib
+
+
+def generate_secret_id():
+    """Generate a unique INGRES Secret ID."""
+
+    while True:
+        secret_id = "ING-" + secrets.token_hex(6).upper()
+
+        secret_hash = hashlib.sha256(
+            secret_id.encode("utf-8")
+        ).hexdigest()
+
+        existing = users_collection.find_one({
+            "secret_id_hash": secret_hash
+        })
+
+        if not existing:
+            return secret_id
+
+
+def create_secret_id_user(name):
+    """Create a new account using the user's name."""
+
+    name = name.strip()
+
+    if not name or len(name) > 100:
+        return None
+
+    secret_id = generate_secret_id()
+
+    secret_hash = hashlib.sha256(
+        secret_id.encode("utf-8")
+    ).hexdigest()
+
+    now = datetime.now(timezone.utc)
+
+    user_document = {
+        "name": name,
+        "secret_id_hash": secret_hash,
+        "login_method": "secret_id",
+        "created_at": now,
+        "updated_at": now
+    }
+
+    try:
+        result = users_collection.insert_one(user_document)
+
+        return {
+            "user_id": str(result.inserted_id),
+            "name": name,
+            "secret_id": secret_id
+        }
+
+    except Exception as error:
+        print("[SECRET ID ACCOUNT ERROR]", error)
+        return None
+
+
+def login_with_secret_id(name, secret_id):
+    """Find an account using name and Secret ID."""
+
+    name = name.strip()
+    secret_id = secret_id.strip().upper()
+
+    if not name or not secret_id:
+        return None
+
+    secret_hash = hashlib.sha256(
+        secret_id.encode("utf-8")
+    ).hexdigest()
+
+    user = users_collection.find_one({
+        "name": name,
+        "secret_id_hash": secret_hash,
+        "login_method": "secret_id"
+    })
+
+    if not user:
+        return None
+
+    return {
+        "user_id": str(user["_id"]),
+        "name": user["name"]
+    }

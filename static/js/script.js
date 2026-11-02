@@ -1,70 +1,93 @@
-// ============================================================
-// INGRES AI ASSISTANT
-// JWT AUTHENTICATION + MONGODB CHAT HISTORY
-// ============================================================
 
 "use strict";
+
+// ============================================================
+// INGRES AI VIRTUAL ASSISTANT
+// SECRET ID LOGIN + JWT + MONGODB CHAT HISTORY
+// ============================================================
+
 
 // ============================================================
 // GLOBAL VARIABLES
 // ============================================================
 
-let chatBox = null;
-let userInput = null;
-let sendButton = null;
-let typingIndicator = null;
-let recentChatList = null;
+let chatBox;
+let userInput;
+let sendButton;
+let typingIndicator;
+let recentChatList;
 
-let newChatButton = null;
-let newChatMenu = null;
+let newChatButton;
+let newChatMenu;
+let clearChatButton;
+let clearMemoryButton;
+let clearMessagesButton;
+let startFreshButton;
 
-let clearChatButton = null;
-let clearMemoryButton = null;
-let clearMessagesButton = null;
-let startFreshButton = null;
+let accountButton;
+let accountMenu;
+let accountName;
+let accountDisplayName;
+let accountDisplayEmail;
+let switchAccountButton;
+let logoutButton;
 
-let accountButton = null;
-let accountMenu = null;
-let accountName = null;
-let accountDisplayName = null;
-let accountDisplayEmail = null;
-let switchAccountButton = null;
-let logoutButton = null;
-
-let openSidebarButton = null;
-let closeSidebarButton = null;
-let sidebar = null;
+let openSidebarButton;
+let closeSidebarButton;
+let sidebar;
 
 let currentConversationId = null;
 let isSending = false;
 let isClearing = false;
 
+
 // ============================================================
-// AUTHENTICATION
+// AUTHENTICATION ELEMENTS
+// ============================================================
+
+let loginScreen;
+let appContainer;
+
+let createTab;
+let loginTab;
+let createAccountForm;
+let loginAccountForm;
+
+let authName;
+let loginName;
+let authSecretId;
+
+let authMessage;
+let secretIdResult;
+let secretIdValue;
+let copySecretIdButton;
+let continueButton;
+
+
+// ============================================================
+// AUTHENTICATION STORAGE
 // ============================================================
 
 function getAuthToken() {
-    return (
-        localStorage.getItem("ingres_token") ||
-        localStorage.getItem("ingresToken")
-    );
+    return localStorage.getItem("ingres_token");
 }
 
 function getCurrentUser() {
-    const savedUser =
-        localStorage.getItem("ingres_user") ||
-        localStorage.getItem("ingresUser");
-
-    if (!savedUser) {
-        return null;
-    }
-
     try {
-        return JSON.parse(savedUser);
+        return JSON.parse(
+            localStorage.getItem("ingres_user")
+        );
     } catch (error) {
         console.error("Unable to read user information:", error);
         return null;
     }
+}
+
+function saveAuthData(token, user) {
+    localStorage.setItem("ingres_token", token);
+    localStorage.setItem("ingres_user", JSON.stringify(user));
+
+    localStorage.removeItem("ingres_visitor_token");
 }
 
 function clearAuthData() {
@@ -72,35 +95,402 @@ function clearAuthData() {
     localStorage.removeItem("ingres_user");
     localStorage.removeItem("ingresToken");
     localStorage.removeItem("ingresUser");
+    localStorage.removeItem("ingres_visitor_token");
 }
 
-async function authenticatedFetch(url, options = {}) {
+
+// ============================================================
+// LOGIN MODE
+// ============================================================
+
+function isLoginOnlyMode() {
+    return localStorage.getItem("ingres_login_only") === "true";
+}
+
+
+// ============================================================
+// API AUTHENTICATION
+// ============================================================
+
+async function registerWithName(name) {
+    const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            name: name
+        })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+        throw new Error(
+            data.message || "Account creation failed."
+        );
+    }
+
+    saveAuthData(data.token, data.user);
+
+    return data;
+}
+
+
+async function loginWithSecretId(name, secretId) {
+    const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            name: name,
+            secret_id: secretId
+        })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+        throw new Error(
+            data.message || "Invalid name or Secret ID."
+        );
+    }
+
+    saveAuthData(data.token, data.user);
+
+    return data;
+}
+
+
+async function authFetch(url, options = {}) {
     const token = getAuthToken();
 
     if (!token) {
-        window.location.href = "/login";
-        throw new Error("Authentication token is missing.");
+        throw new Error("Please log in to continue.");
     }
 
     const headers = {
         ...(options.headers || {}),
-        Authorization: `Bearer ${token}`
+        "Authorization": `Bearer ${token}`
     };
 
     const response = await fetch(url, {
         ...options,
-        headers
+        headers: headers
     });
 
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 401) {
         clearAuthData();
-        window.location.href = "/login";
 
-        throw new Error("Authentication expired.");
+        localStorage.setItem(
+            "ingres_login_only",
+            "true"
+        );
+
+        showLoginOnlyScreen();
+
+        throw new Error(
+            "Your session expired. Please log in again."
+        );
     }
 
     return response;
 }
+
+
+// ============================================================
+// SHOW / HIDE SCREENS
+// ============================================================
+
+function showLoginScreen() {
+    if (loginScreen) {
+        loginScreen.style.display = "flex";
+    }
+
+    if (appContainer) {
+        appContainer.classList.add("app-hidden");
+    }
+}
+
+
+function showApplication() {
+    if (loginScreen) {
+        loginScreen.style.display = "none";
+    }
+
+    if (appContainer) {
+        appContainer.classList.remove("app-hidden");
+    }
+
+    updateAccountUI();
+}
+
+
+// ============================================================
+// AUTHENTICATION TABS
+// ============================================================
+
+function showCreateTab() {
+    if (isLoginOnlyMode()) {
+        showLoginOnlyScreen();
+        return;
+    }
+
+    createTab.style.display = "block";
+    loginTab.style.display = "block";
+
+    createTab.textContent = "Create Account";
+    loginTab.textContent = "Existing Account";
+
+    createTab.classList.add("active");
+    loginTab.classList.remove("active");
+
+    createAccountForm.style.display = "block";
+    loginAccountForm.style.display = "none";
+
+    secretIdResult.style.display = "none";
+    authMessage.textContent = "";
+}
+
+
+function showLoginTab() {
+    if (isLoginOnlyMode()) {
+        showLoginOnlyScreen();
+        return;
+    }
+
+    createTab.classList.remove("active");
+    loginTab.classList.add("active");
+
+    createAccountForm.style.display = "none";
+    loginAccountForm.style.display = "block";
+
+    secretIdResult.style.display = "none";
+    authMessage.textContent = "";
+}
+
+
+// ============================================================
+// LOGIN-ONLY SCREEN
+// This displays only the form's Login button.
+// Both tab buttons are hidden.
+// ============================================================
+
+function showLoginOnlyScreen() {
+    showLoginScreen();
+
+    createTab.style.display = "none";
+    loginTab.style.display = "none";
+
+    createAccountForm.style.display = "none";
+    loginAccountForm.style.display = "block";
+
+    secretIdResult.style.display = "none";
+    authMessage.textContent = "";
+
+    if (loginName) {
+        loginName.value = "";
+    }
+
+    if (authSecretId) {
+        authSecretId.value = "";
+    }
+}
+
+
+// ============================================================
+// CREATE ACCOUNT
+// ============================================================
+
+async function handleCreateAccount(event) {
+    event.preventDefault();
+
+    authMessage.textContent = "";
+    secretIdResult.style.display = "none";
+
+    const name = authName.value.trim();
+
+    if (!name) {
+        authMessage.textContent = "Please enter your name.";
+        return;
+    }
+
+    const button = document.getElementById(
+        "create-account-button"
+    );
+
+    if (!button) return;
+
+    button.disabled = true;
+    button.textContent = "Creating account...";
+
+    try {
+        const data = await registerWithName(name);
+
+        if (!data.secret_id) {
+            throw new Error(
+                "Secret ID was not returned by the server."
+            );
+        }
+
+        localStorage.setItem(
+            "ingres_login_only",
+            "true"
+        );
+
+        secretIdValue.textContent = data.secret_id;
+
+        secretIdResult.style.display = "block";
+
+        createAccountForm.style.display = "none";
+        loginAccountForm.style.display = "none";
+
+        authMessage.textContent = "";
+
+    } catch (error) {
+        console.error("Registration error:", error);
+
+        authMessage.textContent =
+            error.message || "Unable to create account.";
+
+    } finally {
+        button.disabled = false;
+        button.textContent = "Create My Account";
+    }
+}
+
+
+// ============================================================
+// LOGIN
+// ============================================================
+
+async function handleLogin(event) {
+    event.preventDefault();
+
+    authMessage.textContent = "";
+
+    const name = loginName.value.trim();
+    const secretId = authSecretId.value.trim();
+
+    if (!name || !secretId) {
+        authMessage.textContent =
+            "Enter your name and Secret ID.";
+
+        return;
+    }
+
+    const button = document.getElementById("login-button");
+
+    if (!button) return;
+
+    button.disabled = true;
+    button.textContent = "Logging in...";
+
+    try {
+        await loginWithSecretId(name, secretId);
+
+        localStorage.setItem(
+            "ingres_login_only",
+            "true"
+        );
+
+        currentConversationId = null;
+
+        showApplication();
+        showWelcomeMessage();
+
+        await loadRecentChats();
+
+        loginName.value = "";
+        authSecretId.value = "";
+
+    } catch (error) {
+        console.error("Login error:", error);
+
+        authMessage.textContent =
+            error.message || "Login failed.";
+
+    } finally {
+        button.disabled = false;
+        button.textContent = "Login";
+    }
+}
+
+
+// ============================================================
+// COPY SECRET ID
+// ============================================================
+
+async function copySecretId() {
+    const secretId = secretIdValue.textContent;
+
+    try {
+        await navigator.clipboard.writeText(secretId);
+
+        copySecretIdButton.textContent = "Copied!";
+
+    } catch (error) {
+        const temporaryInput =
+            document.createElement("textarea");
+
+        temporaryInput.value = secretId;
+
+        document.body.appendChild(temporaryInput);
+
+        temporaryInput.select();
+        document.execCommand("copy");
+
+        temporaryInput.remove();
+
+        copySecretIdButton.textContent = "Copied!";
+    }
+}
+
+
+// ============================================================
+// CONTINUE AFTER REGISTRATION
+// ============================================================
+
+async function continueAfterRegistration() {
+    secretIdResult.style.display = "none";
+
+    showApplication();
+
+    currentConversationId = null;
+
+    showWelcomeMessage();
+
+    await loadRecentChats();
+}
+
+
+// ============================================================
+// AUTOMATIC LOGIN
+// ============================================================
+
+async function startAuthentication() {
+    const token = getAuthToken();
+    const user = getCurrentUser();
+
+    if (token && user) {
+        showApplication();
+
+        await loadRecentChats();
+
+        return true;
+    }
+
+    if (isLoginOnlyMode()) {
+        showLoginOnlyScreen();
+    } else {
+        showLoginScreen();
+        showCreateTab();
+    }
+
+    return false;
+}
+
 
 // ============================================================
 // HTML ESCAPING
@@ -115,39 +505,39 @@ function escapeHtml(value) {
         .replace(/'/g, "&#039;");
 }
 
+
 // ============================================================
 // MARKDOWN RENDERING
 // ============================================================
 
 function renderMarkdown(value) {
-    if (!value) {
-        return "";
-    }
+    if (!value) return "";
 
     let text = String(value);
+
     const codeBlocks = [];
 
-    // Preserve fenced code blocks before processing Markdown.
+    // Preserve fenced code blocks.
     text = text.replace(
         /```([^\n`]*)\n?([\s\S]*?)```/g,
         function (match, language, code) {
             const lang = language.trim().split(/\s+/)[0];
-            const safeCode = escapeHtml(code.replace(/^\n|\n$/g, ""));
 
             const html = `
-                <pre class="code-block"><code class="${
-                    lang ? "language-" + escapeHtml(lang) : ""
-                }">${safeCode}</code></pre>
+                <pre class="code-block">
+                    <code class="${lang ? "language-" + escapeHtml(lang) : ""}">${escapeHtml(code.trim())}</code>
+                </pre>
             `;
 
-            const placeholder = `@@CODEBLOCK${codeBlocks.length}@@`;
+            const placeholder =
+                `@@CODEBLOCK${codeBlocks.length}@@`;
+
             codeBlocks.push(html);
 
             return placeholder;
         }
     );
 
-    // Escape ordinary text.
     text = escapeHtml(text);
 
     // Inline code.
@@ -164,8 +554,8 @@ function renderMarkdown(value) {
 
     // Italic.
     text = text.replace(
-        /(^|[^*])\*([^*\n]+)\*(?!\*)/g,
-        "$1<em>$2</em>"
+        /\*([^*\n]+)\*/g,
+        "<em>$1</em>"
     );
 
     // Headings.
@@ -184,12 +574,18 @@ function renderMarkdown(value) {
         "<h2>$1</h2>"
     );
 
+    // Links.
+    text = text.replace(
+        /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,
+        function (match, label, url) {
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+        }
+    );
+
     // Unordered lists.
     text = text.replace(
-        /^(?:- |\* ).+$/gm,
-        function (line) {
-            return "<li>" + line.substring(2) + "</li>";
-        }
+        /^(?:- |\* )(.+)$/gm,
+        "<li>$1</li>"
     );
 
     text = text.replace(
@@ -205,26 +601,6 @@ function renderMarkdown(value) {
         "<li>$1</li>"
     );
 
-    text = text.replace(
-        /(?:<li>.*?<\/li>\n?)+/gs,
-        function (items) {
-            if (items.includes("<ul>")) {
-                return items;
-            }
-
-            return "<ol>" + items + "</ol>";
-        }
-    );
-
-    // Links: only allow HTTP(S) URLs.
-    text = text.replace(
-        /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,
-        function (match, label, url) {
-            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
-        }
-    );
-
-    // Newlines.
     text = text.replace(/\n/g, "<br>");
 
     // Restore code blocks.
@@ -238,17 +614,16 @@ function renderMarkdown(value) {
     return text;
 }
 
+
 // ============================================================
 // ADD MESSAGE TO CHAT
 // ============================================================
 
 function addMessage(message, sender) {
-    if (!chatBox) {
-        console.error("Chat box was not found.");
-        return;
-    }
+    if (!chatBox) return;
 
     const wrapper = document.createElement("div");
+
     wrapper.className =
         sender === "user"
             ? "message user-message"
@@ -263,6 +638,7 @@ function addMessage(message, sender) {
 
     const name = document.createElement("div");
     name.className = "message-name";
+
     name.textContent =
         sender === "user" ? "You" : "INGRES Assistant";
 
@@ -282,8 +658,28 @@ function addMessage(message, sender) {
     wrapper.appendChild(content);
 
     chatBox.appendChild(wrapper);
+
     chatBox.scrollTop = chatBox.scrollHeight;
 }
+
+
+// ============================================================
+// WELCOME MESSAGE
+// ============================================================
+
+function showWelcomeMessage() {
+    if (!chatBox) return;
+
+    chatBox.innerHTML = "";
+
+    addMessage(
+        "## 👋 Hello!\n" +
+        "Welcome to the **INGRES AI Virtual Assistant**.\n" +
+        "How can I help you today?",
+        "assistant"
+    );
+}
+
 
 // ============================================================
 // TYPING INDICATOR
@@ -301,30 +697,17 @@ function hideTyping() {
     }
 }
 
+
 // ============================================================
 // SEND MESSAGE
 // ============================================================
 
 async function sendMessage() {
-    if (isSending) {
-        return;
-    }
-
-    if (!userInput) {
-        console.error("Input element #user-input was not found.");
-        return;
-    }
+    if (isSending || !userInput) return;
 
     const message = userInput.value.trim();
 
-    if (!message) {
-        return;
-    }
-
-    if (!getAuthToken()) {
-        window.location.href = "/login";
-        return;
-    }
+    if (!message) return;
 
     isSending = true;
 
@@ -335,10 +718,11 @@ async function sendMessage() {
     addMessage(message, "user");
 
     userInput.value = "";
+
     showTyping();
 
     try {
-        const response = await authenticatedFetch("/api/chat", {
+        const response = await authFetch("/api/chat", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -371,14 +755,14 @@ async function sendMessage() {
     } catch (error) {
         console.error("Send message error:", error);
 
-        if (error.message !== "Authentication expired.") {
-            addMessage(
-                "Sorry, your message could not be processed. Please try again.",
-                "assistant"
-            );
-        }
+        addMessage(
+            "Sorry, your message could not be processed. Please try again.",
+            "assistant"
+        );
+
     } finally {
         isSending = false;
+
         hideTyping();
 
         if (sendButton) {
@@ -391,46 +775,54 @@ async function sendMessage() {
     }
 }
 
+
 // ============================================================
 // LOAD RECENT CHATS
 // ============================================================
 
 async function loadRecentChats() {
-    if (!recentChatList) {
-        return;
-    }
+    if (!recentChatList || !getAuthToken()) return;
 
     try {
-        const response = await authenticatedFetch("/api/chats");
+        const response = await authFetch("/api/chats");
+
         const data = await response.json();
 
         if (!response.ok || !data.success) {
-            throw new Error(data.message || "Unable to load recent chats.");
+            throw new Error(
+                data.message || "Unable to load recent chats."
+            );
         }
 
         recentChatList.innerHTML = "";
 
-        const chats = Array.isArray(data.chats) ? data.chats : [];
+        const chats = Array.isArray(data.chats)
+            ? data.chats
+            : [];
 
         if (chats.length === 0) {
             const empty = document.createElement("div");
+
             empty.className = "empty-chat-message";
             empty.textContent = "No recent chats";
+
             recentChatList.appendChild(empty);
+
             return;
         }
 
         chats.forEach(function (chat) {
             const chatId = chat.id || chat._id;
 
-            if (!chatId) {
-                return;
-            }
+            if (!chatId) return;
 
             const item = document.createElement("div");
             item.className = "recent-chat-item";
 
-            if (String(chatId) === String(currentConversationId)) {
+            if (
+                String(chatId) ===
+                String(currentConversationId)
+            ) {
                 item.classList.add("active");
             }
 
@@ -438,18 +830,26 @@ async function loadRecentChats() {
             title.className = "recent-chat-title";
             title.textContent = chat.title || "New Chat";
 
-            const deleteButton = document.createElement("button");
+            const deleteButton =
+                document.createElement("button");
+
             deleteButton.type = "button";
             deleteButton.className = "delete-chat-button";
             deleteButton.textContent = "🗑️";
             deleteButton.title = "Delete chat";
 
-            deleteButton.addEventListener("click", async function (event) {
-                event.preventDefault();
-                event.stopPropagation();
+            deleteButton.addEventListener(
+                "click",
+                async function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
 
-                await deleteChat(chatId, chat.title || "New Chat");
-            });
+                    await deleteChat(
+                        chatId,
+                        chat.title || "New Chat"
+                    );
+                }
+            );
 
             item.appendChild(title);
             item.appendChild(deleteButton);
@@ -466,21 +866,21 @@ async function loadRecentChats() {
     }
 }
 
+
 // ============================================================
-// DELETE A SAVED CHAT
+// DELETE SAVED CHAT
 // ============================================================
 
 async function deleteChat(conversationId, title) {
     const confirmed = window.confirm(
-        `Delete "${title}"?\n\nThis conversation and its saved messages will be permanently deleted.`
+        `Delete "${title}"?\n\n` +
+        "This conversation and its saved messages will be permanently deleted."
     );
 
-    if (!confirmed) {
-        return;
-    }
+    if (!confirmed) return;
 
     try {
-        const response = await authenticatedFetch(
+        const response = await authFetch(
             `/api/chats/${encodeURIComponent(conversationId)}`,
             {
                 method: "DELETE"
@@ -490,10 +890,15 @@ async function deleteChat(conversationId, title) {
         const data = await response.json();
 
         if (!response.ok || !data.success) {
-            throw new Error(data.message || "Unable to delete this chat.");
+            throw new Error(
+                data.message || "Unable to delete this chat."
+            );
         }
 
-        if (String(currentConversationId) === String(conversationId)) {
+        if (
+            String(currentConversationId) ===
+            String(conversationId)
+        ) {
             currentConversationId = null;
             showWelcomeMessage();
         }
@@ -503,28 +908,70 @@ async function deleteChat(conversationId, title) {
     } catch (error) {
         console.error("Delete chat error:", error);
 
-        if (error.message !== "Authentication expired.") {
-            alert(error.message || "Unable to delete the chat.");
+        alert(error.message || "Unable to delete the chat.");
+    }
+}
+
+
+// ============================================================
+// OPEN SAVED CONVERSATION
+// ============================================================
+
+async function openConversation(conversationId) {
+    try {
+        const response = await authFetch(
+            `/api/chats/${encodeURIComponent(conversationId)}`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(
+                data.message || "Unable to open this conversation."
+            );
         }
+
+        currentConversationId = conversationId;
+
+        chatBox.innerHTML = "";
+
+        const messages = Array.isArray(data.messages)
+            ? data.messages
+            : [];
+
+        if (messages.length === 0) {
+            addMessage(
+                "This conversation is empty.",
+                "assistant"
+            );
+        } else {
+            messages.forEach(function (message) {
+                addMessage(
+                    message.message || "",
+                    message.role === "user" ? "user" : "assistant"
+                );
+            });
+        }
+
+        await loadRecentChats();
+
+        if (sidebar) {
+            sidebar.classList.remove("open");
+        }
+
+        if (userInput) {
+            userInput.focus();
+        }
+
+    } catch (error) {
+        console.error("Open conversation error:", error);
+
+        alert(
+            error.message || "Unable to open this conversation."
+        );
     }
 }
 
-// ============================================================
-// WELCOME MESSAGE
-// ============================================================
-
-function showWelcomeMessage() {
-    if (!chatBox) {
-        return;
-    }
-
-    chatBox.innerHTML = "";
-
-    addMessage(
-        "## 👋 Hello!\nWelcome to the **INGRES AI Virtual Assistant**.\nHow can I help you today?",
-        "assistant"
-    );
-}
 
 // ============================================================
 // NEW CHAT
@@ -551,9 +998,9 @@ function newChat() {
     loadRecentChats();
 }
 
+
 // ============================================================
 // CLEAR CHAT
-// Permanently deletes the ACTIVE conversation from MongoDB.
 // ============================================================
 
 async function clearCurrentMessages() {
@@ -563,9 +1010,9 @@ async function clearCurrentMessages() {
     );
 }
 
+
 // ============================================================
 // CLEAR CONVERSATION MEMORY
-// Permanently deletes the ACTIVE conversation from MongoDB.
 // ============================================================
 
 async function clearConversationMemory() {
@@ -575,27 +1022,26 @@ async function clearConversationMemory() {
     );
 }
 
+
 // ============================================================
 // SHARED CLEAR FUNCTION
 // ============================================================
 
-async function clearActiveConversation(confirmText, successText) {
-    if (isClearing) {
-        return;
-    }
+async function clearActiveConversation(
+    confirmText,
+    successText
+) {
+    if (isClearing) return;
 
-    if (!window.confirm(confirmText)) {
-        return;
-    }
+    if (!window.confirm(confirmText)) return;
 
     isClearing = true;
 
     const conversationId = currentConversationId;
 
     try {
-        // Delete the saved conversation and its messages.
         if (conversationId) {
-            const response = await authenticatedFetch(
+            const response = await authFetch(
                 `/api/chats/${encodeURIComponent(conversationId)}`,
                 {
                     method: "DELETE"
@@ -606,12 +1052,12 @@ async function clearActiveConversation(confirmText, successText) {
 
             if (!response.ok || !data.success) {
                 throw new Error(
-                    data.message || "The conversation could not be deleted."
+                    data.message ||
+                    "The conversation could not be deleted."
                 );
             }
         }
 
-        // Clear the current view only after the delete succeeds.
         currentConversationId = null;
 
         if (chatBox) {
@@ -634,74 +1080,16 @@ async function clearActiveConversation(confirmText, successText) {
     } catch (error) {
         console.error("Clear conversation error:", error);
 
-        if (error.message !== "Authentication expired.") {
-            alert(
-                error.message ||
-                "Unable to clear the conversation. Check the Flask terminal and browser console."
-            );
-        }
+        alert(
+            error.message ||
+            "Unable to clear the conversation."
+        );
+
     } finally {
         isClearing = false;
     }
 }
 
-// ============================================================
-// OPEN A SAVED CONVERSATION
-// ============================================================
-
-async function openConversation(conversationId) {
-    try {
-        const response = await authenticatedFetch(
-            `/api/chats/${encodeURIComponent(conversationId)}`
-        );
-
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-            throw new Error(
-                data.message || "Unable to open this conversation."
-            );
-        }
-
-        currentConversationId = conversationId;
-
-        if (chatBox) {
-            chatBox.innerHTML = "";
-        }
-
-        const messages = Array.isArray(data.messages)
-            ? data.messages
-            : [];
-
-        if (messages.length === 0) {
-            addMessage("This conversation is empty.", "assistant");
-        } else {
-            messages.forEach(function (message) {
-                addMessage(
-                    message.message || "",
-                    message.role === "user" ? "user" : "assistant"
-                );
-            });
-        }
-
-        await loadRecentChats();
-
-        if (sidebar) {
-            sidebar.classList.remove("open");
-        }
-
-        if (userInput) {
-            userInput.focus();
-        }
-
-    } catch (error) {
-        console.error("Open conversation error:", error);
-
-        if (error.message !== "Authentication expired.") {
-            alert(error.message || "Unable to open this conversation.");
-        }
-    }
-}
 
 // ============================================================
 // ACCOUNT MENU
@@ -710,201 +1098,260 @@ async function openConversation(conversationId) {
 function updateAccountUI() {
     const user = getCurrentUser();
 
-    if (!user) {
-        if (accountName) {
-            accountName.textContent = "Account";
-        }
-
-        if (accountDisplayName) {
-            accountDisplayName.textContent = "User";
-        }
-
-        if (accountDisplayEmail) {
-            accountDisplayEmail.textContent = "Not signed in";
-        }
-
-        return;
-    }
-
-    const name = user.name || user.username || "User";
-    const email = user.email || "No email";
+    const displayName =
+        user && user.name ? user.name : "INGRES User";
 
     if (accountName) {
-        accountName.textContent = name;
+        accountName.textContent = displayName;
     }
 
     if (accountDisplayName) {
-        accountDisplayName.textContent = name;
+        accountDisplayName.textContent = displayName;
     }
 
     if (accountDisplayEmail) {
-        accountDisplayEmail.textContent = email;
+        accountDisplayEmail.textContent =
+            "INGRES Secret ID account";
     }
 }
 
-function loginWithAnotherAccount() {
-    clearAuthData();
-    window.location.href = "/login";
-}
+
+// ============================================================
+// LOGOUT
+// ============================================================
 
 function logout() {
     const confirmed = window.confirm(
-        "Are you sure you want to log out?"
+        "Log out of your INGRES account?\n\n" +
+        "Your saved conversations will remain safe."
     );
 
-    if (!confirmed) {
-        return;
-    }
+    if (!confirmed) return;
+
+    localStorage.setItem(
+        "ingres_login_only",
+        "true"
+    );
 
     clearAuthData();
-    window.location.href = "/login";
+
+    currentConversationId = null;
+
+    if (accountMenu) {
+        accountMenu.classList.add("hidden");
+    }
+
+    showLoginOnlyScreen();
 }
 
+
 // ============================================================
-// INITIALIZE THE APPLICATION
+// LOGIN WITH ANOTHER ACCOUNT
+// ============================================================
+
+function loginWithAnotherAccount() {
+    const confirmed = window.confirm(
+        "Login with another INGRES account?\n\n" +
+        "Enter the other account's name and Secret ID."
+    );
+
+    if (!confirmed) return;
+
+    localStorage.setItem(
+        "ingres_login_only",
+        "true"
+    );
+
+    clearAuthData();
+
+    currentConversationId = null;
+
+    if (accountMenu) {
+        accountMenu.classList.add("hidden");
+    }
+
+    showLoginOnlyScreen();
+}
+
+
+// ============================================================
+// INITIALIZE APPLICATION
 // ============================================================
 
 document.addEventListener("DOMContentLoaded", function () {
+
     console.log("INGRES AI Assistant loaded.");
 
-    // Get DOM elements only after the page is loaded.
+    // ========================================================
+    // MAIN APPLICATION ELEMENTS
+    // ========================================================
+
     chatBox = document.getElementById("chat-box");
     userInput = document.getElementById("user-input");
     sendButton = document.getElementById("send-button");
     typingIndicator = document.getElementById("typing");
-    recentChatList = document.getElementById("recent-chat-list");
 
-    newChatButton = document.getElementById("new-chat-button");
-    newChatMenu = document.getElementById("new-chat-menu");
+    recentChatList =
+        document.getElementById("recent-chat-list");
 
-    // IMPORTANT: Match the IDs in your actual HTML.
-    clearChatButton = document.getElementById("clear-chat-button");
-    clearMemoryButton = document.getElementById("clear-memory-button");
+    newChatButton =
+        document.getElementById("new-chat-button");
 
-    // Support older HTML if this ID still exists.
-    clearMessagesButton = document.getElementById("clear-messages-button");
+    newChatMenu =
+        document.getElementById("new-chat-menu");
 
-    startFreshButton = document.getElementById("start-fresh-button");
+    clearChatButton =
+        document.getElementById("clear-chat-button");
 
-    accountButton = document.getElementById("account-button");
-    accountMenu = document.getElementById("account-menu");
-    accountName = document.getElementById("account-name");
-    accountDisplayName = document.getElementById("account-display-name");
-    accountDisplayEmail = document.getElementById("account-display-email");
-    switchAccountButton = document.getElementById("switch-account-button");
-    logoutButton = document.getElementById("logout-button");
+    clearMemoryButton =
+        document.getElementById("clear-memory-button");
 
-    openSidebarButton = document.getElementById("open-sidebar-button");
-    closeSidebarButton = document.getElementById("close-sidebar-button");
-    sidebar = document.getElementById("sidebar");
-    
-/* ==============================================
-   MOBILE SIDEBAR SUPPORT
-============================================== */
+    clearMessagesButton =
+        document.getElementById("clear-messages-button");
 
-function closeMobileSidebar() {
-    if (sidebar) {
-        sidebar.classList.remove("open");
-    }
+    startFreshButton =
+        document.getElementById("start-fresh-button");
 
-    document.body.classList.remove("mobile-sidebar-open");
+    accountButton =
+        document.getElementById("account-button");
 
-    if (openSidebarButton) {
-        openSidebarButton.setAttribute(
-            "aria-expanded",
-            "false"
+    accountMenu =
+        document.getElementById("account-menu");
+
+    accountName =
+        document.getElementById("account-name");
+
+    accountDisplayName =
+        document.getElementById("account-display-name");
+
+    accountDisplayEmail =
+        document.getElementById("account-display-email");
+
+    switchAccountButton =
+        document.getElementById("switch-account-button");
+
+    logoutButton =
+        document.getElementById("logout-button");
+
+    openSidebarButton =
+        document.getElementById("open-sidebar-button");
+
+    closeSidebarButton =
+        document.getElementById("close-sidebar-button");
+
+    sidebar =
+        document.getElementById("sidebar");
+
+
+    // ========================================================
+    // AUTHENTICATION ELEMENTS
+    // ========================================================
+
+    loginScreen =
+        document.getElementById("login-screen");
+
+    appContainer =
+        document.getElementById("app-container");
+
+    createTab =
+        document.getElementById("create-tab");
+
+    loginTab =
+        document.getElementById("login-tab");
+
+    createAccountForm =
+        document.getElementById("create-account-form");
+
+    loginAccountForm =
+        document.getElementById("login-account-form");
+
+    authName =
+        document.getElementById("auth-name");
+
+    loginName =
+        document.getElementById("login-name");
+
+    authSecretId =
+        document.getElementById("auth-secret-id");
+
+    authMessage =
+        document.getElementById("auth-message");
+
+    secretIdResult =
+        document.getElementById("secret-id-result");
+
+    secretIdValue =
+        document.getElementById("secret-id-value");
+
+    copySecretIdButton =
+        document.getElementById("copy-secret-id-button");
+
+    continueButton =
+        document.getElementById("continue-button");
+
+
+    // ========================================================
+    // CHECK REQUIRED AUTHENTICATION ELEMENTS
+    // ========================================================
+
+    const requiredAuthElements = [
+        loginScreen,
+        appContainer,
+        createTab,
+        loginTab,
+        createAccountForm,
+        loginAccountForm,
+        authName,
+        loginName,
+        authSecretId,
+        authMessage,
+        secretIdResult,
+        secretIdValue,
+        copySecretIdButton,
+        continueButton
+    ];
+
+    if (requiredAuthElements.some(element => !element)) {
+        console.error(
+            "Some authentication HTML elements are missing. Check templates/index.html."
         );
-    }
-}
 
-function openMobileSidebar() {
-    if (sidebar) {
-        sidebar.classList.add("open");
-    }
-
-    document.body.classList.add("mobile-sidebar-open");
-
-    if (openSidebarButton) {
-        openSidebarButton.setAttribute(
-            "aria-expanded",
-            "true"
-        );
-    }
-}
-
-/* Keep overlay state synchronized with sidebar state */
-if (openSidebarButton) {
-    openSidebarButton.addEventListener("click", function () {
-        if (sidebar && sidebar.classList.contains("open")) {
-            closeMobileSidebar();
-        } else {
-            openMobileSidebar();
-        }
-    });
-}
-
-if (closeSidebarButton) {
-    closeSidebarButton.addEventListener("click", function () {
-        closeMobileSidebar();
-    });
-}
-
-/* Tap outside the sidebar to close it */
-document.addEventListener("click", function (event) {
-    if (
-        !sidebar ||
-        !sidebar.classList.contains("open") ||
-        window.innerWidth > 768
-    ) {
         return;
     }
 
-    const clickedSidebar = sidebar.contains(event.target);
-    const clickedToggle =
-        openSidebarButton &&
-        openSidebarButton.contains(event.target);
 
-    if (!clickedSidebar && !clickedToggle) {
-        closeMobileSidebar();
-    }
-});
+    // ========================================================
+    // AUTHENTICATION EVENTS
+    // ========================================================
 
-/* Close sidebar with Escape */
-document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape") {
-        closeMobileSidebar();
-    }
-});
+    createTab.addEventListener("click", showCreateTab);
+    loginTab.addEventListener("click", showLoginTab);
 
-/* Reset drawer state when switching back to desktop */
-window.addEventListener("resize", function () {
-    if (window.innerWidth > 768) {
-        closeMobileSidebar();
-    }
-});
+    createAccountForm.addEventListener(
+        "submit",
+        handleCreateAccount
+    );
+
+    loginAccountForm.addEventListener(
+        "submit",
+        handleLogin
+    );
+
+    copySecretIdButton.addEventListener(
+        "click",
+        copySecretId
+    );
+
+    continueButton.addEventListener(
+        "click",
+        continueAfterRegistration
+    );
 
 
-    // Verify essential HTML elements.
-    if (!chatBox) {
-        console.error("Missing HTML element: #chat-box");
-    }
+    // ========================================================
+    // SEND BUTTON
+    // ========================================================
 
-    if (!userInput) {
-        console.error("Missing HTML element: #user-input");
-    }
-
-    if (!sendButton) {
-        console.error("Missing HTML element: #send-button");
-    }
-
-    if (!getAuthToken()) {
-        window.location.href = "/login";
-        return;
-    }
-
-    updateAccountUI();
-
-    // Send button.
     if (sendButton) {
         sendButton.addEventListener("click", function (event) {
             event.preventDefault();
@@ -912,17 +1359,28 @@ window.addEventListener("resize", function () {
         });
     }
 
-    // Enter sends; Shift + Enter inserts a new line.
+
+    // ========================================================
+    // ENTER SENDS MESSAGE
+    // ========================================================
+
     if (userInput) {
         userInput.addEventListener("keydown", function (event) {
-            if (event.key === "Enter" && !event.shiftKey) {
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
                 event.preventDefault();
                 sendMessage();
             }
         });
     }
 
-    // New Chat menu.
+
+    // ========================================================
+    // NEW CHAT MENU
+    // ========================================================
+
     if (newChatButton) {
         newChatButton.addEventListener("click", function (event) {
             event.preventDefault();
@@ -936,71 +1394,199 @@ window.addEventListener("resize", function () {
         });
     }
 
-    // Clear Chat button: matches id="clear-chat-button".
+
+    // ========================================================
+    // CLEAR CHAT BUTTON
+    // ========================================================
+
     if (clearChatButton) {
         clearChatButton.addEventListener("click", function (event) {
             event.preventDefault();
             event.stopPropagation();
+
             clearCurrentMessages();
         });
     }
 
-    // Compatibility with older HTML.
-    if (clearMessagesButton && clearMessagesButton !== clearChatButton) {
-        clearMessagesButton.addEventListener("click", function (event) {
-            event.preventDefault();
-            event.stopPropagation();
-            clearCurrentMessages();
-        });
-    }
+    if (
+        clearMessagesButton &&
+        clearMessagesButton !== clearChatButton
+    ) {
+        clearMessagesButton.addEventListener(
+            "click",
+            function (event) {
+                event.preventDefault();
+                event.stopPropagation();
 
-    // Clear Conversation Memory button.
-    if (clearMemoryButton) {
-        clearMemoryButton.addEventListener("click", function (event) {
-            event.preventDefault();
-            event.stopPropagation();
-            clearConversationMemory();
-        });
-    }
-
-    // Start Fresh.
-    if (startFreshButton) {
-        startFreshButton.addEventListener("click", function (event) {
-            event.preventDefault();
-            newChat();
-        });
-    }
-
-    // Account menu.
-    if (accountButton) {
-        accountButton.addEventListener("click", function (event) {
-            event.preventDefault();
-            event.stopPropagation();
-
-            if (accountMenu) {
-                accountMenu.classList.toggle("hidden");
+                clearCurrentMessages();
             }
-        });
+        );
     }
 
-    // Switch account.
-    if (switchAccountButton) {
-        switchAccountButton.addEventListener("click", function (event) {
-            event.preventDefault();
-            loginWithAnotherAccount();
-        });
+
+    // ========================================================
+    // CLEAR CONVERSATION MEMORY
+    // ========================================================
+
+    if (clearMemoryButton) {
+        clearMemoryButton.addEventListener(
+            "click",
+            function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                clearConversationMemory();
+            }
+        );
     }
+
+
+    // ========================================================
+    // START FRESH
+    // ========================================================
+
+    if (startFreshButton) {
+        startFreshButton.addEventListener(
+            "click",
+            function (event) {
+                event.preventDefault();
+                newChat();
+            }
+        );
+    }
+
+
+    // ========================================================
+    // ACCOUNT MENU
+    // ========================================================
+
+    if (accountButton) {
+        accountButton.addEventListener(
+            "click",
+            function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (accountMenu) {
+                    accountMenu.classList.toggle("hidden");
+                }
+            }
+        );
+    }
+
+
+    // Login with another account.
+    if (switchAccountButton) {
+        switchAccountButton.addEventListener(
+            "click",
+            function (event) {
+                event.preventDefault();
+                loginWithAnotherAccount();
+            }
+        );
+    }
+
 
     // Logout.
     if (logoutButton) {
-        logoutButton.addEventListener("click", function (event) {
-            event.preventDefault();
-            logout();
-        });
+        logoutButton.addEventListener(
+            "click",
+            function (event) {
+                event.preventDefault();
+                logout();
+            }
+        );
     }
 
-    // Close menus when clicking outside them.
+
+    // ========================================================
+    // MOBILE SIDEBAR
+    // ========================================================
+
+    function closeMobileSidebar() {
+        if (sidebar) {
+            sidebar.classList.remove("open");
+        }
+
+        document.body.classList.remove(
+            "mobile-sidebar-open"
+        );
+
+        if (openSidebarButton) {
+            openSidebarButton.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+        }
+    }
+
+
+    function openMobileSidebar() {
+        if (sidebar) {
+            sidebar.classList.add("open");
+        }
+
+        document.body.classList.add(
+            "mobile-sidebar-open"
+        );
+
+        if (openSidebarButton) {
+            openSidebarButton.setAttribute(
+                "aria-expanded",
+                "true"
+            );
+        }
+    }
+
+
+    if (openSidebarButton) {
+        openSidebarButton.addEventListener(
+            "click",
+            function () {
+                if (
+                    sidebar &&
+                    sidebar.classList.contains("open")
+                ) {
+                    closeMobileSidebar();
+                } else {
+                    openMobileSidebar();
+                }
+            }
+        );
+    }
+
+
+    if (closeSidebarButton) {
+        closeSidebarButton.addEventListener(
+            "click",
+            closeMobileSidebar
+        );
+    }
+
+
+    // ========================================================
+    // CLOSE MENUS WHEN CLICKING OUTSIDE
+    // ========================================================
+
     document.addEventListener("click", function (event) {
+
+        if (
+            sidebar &&
+            sidebar.classList.contains("open") &&
+            window.innerWidth <= 768
+        ) {
+            const clickedSidebar =
+                sidebar.contains(event.target);
+
+            const clickedToggle =
+                openSidebarButton &&
+                openSidebarButton.contains(event.target);
+
+            if (!clickedSidebar && !clickedToggle) {
+                closeMobileSidebar();
+            }
+        }
+
         if (
             newChatMenu &&
             newChatButton &&
@@ -1018,35 +1604,65 @@ window.addEventListener("resize", function () {
         ) {
             accountMenu.classList.add("hidden");
         }
+
     });
 
-    // Mobile sidebar controls.
-    if (openSidebarButton) {
-        openSidebarButton.addEventListener("click", function (event) {
-            event.preventDefault();
 
-            if (sidebar) {
-                sidebar.classList.add("open");
+    // ========================================================
+    // CLOSE SIDEBAR WITH ESCAPE
+    // ========================================================
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+            closeMobileSidebar();
+        }
+    });
+
+
+    // ========================================================
+    // RESET SIDEBAR WHEN SWITCHING TO DESKTOP
+    // ========================================================
+
+    window.addEventListener("resize", function () {
+        if (window.innerWidth > 768) {
+            closeMobileSidebar();
+        }
+    });
+
+
+    // ========================================================
+    // INITIALIZE AUTHENTICATION
+    // ========================================================
+
+    startAuthentication()
+        .then(function (authenticated) {
+
+            if (authenticated) {
+                updateAccountUI();
             }
+
+        })
+        .catch(function (error) {
+
+            console.error(
+                "Authentication initialization error:",
+                error
+            );
+
+            clearAuthData();
+
+            localStorage.setItem(
+                "ingres_login_only",
+                "true"
+            );
+
+            showLoginOnlyScreen();
+
         });
-    }
 
-    if (closeSidebarButton) {
-        closeSidebarButton.addEventListener("click", function (event) {
-            event.preventDefault();
 
-            if (sidebar) {
-                sidebar.classList.remove("open");
-            }
-        });
-    }
+    console.log(
+        "INGRES AI Assistant initialization complete."
+    );
 
-    // Load saved conversations.
-    loadRecentChats();
-
-    if (userInput) {
-        userInput.focus();
-    }
-
-    console.log("INGRES AI Assistant initialization complete.");
 });

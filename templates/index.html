@@ -1,571 +1,618 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>INGRES AI Virtual Assistant</title>
-<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <!-- ==================================================
-         MAIN CSS
-         ================================================== -->
 
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}"
-    >
-    <link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='css/dashboard-theme.css') }}"
->
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard-theme.css') }}">
+
+    <style>
+        /* AUTHENTICATION SCREEN */
+        #login-screen {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #101827, #172c46, #263b59);
+            color: #fff;
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 430px;
+            padding: 35px;
+            border-radius: 18px;
+            background: #ffffff;
+            color: #1e293b;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .auth-logo {
+            text-align: center;
+            font-size: 42px;
+            margin-bottom: 10px;
+        }
+
+        .auth-card h1 {
+            text-align: center;
+            margin: 0 0 8px;
+            font-size: 26px;
+        }
+
+        .auth-subtitle {
+            text-align: center;
+            color: #64748b;
+            margin-bottom: 28px;
+            font-size: 14px;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #f1f5f9;
+            color: #334155;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .auth-tab.active {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: white;
+        }
+
+        .auth-form label {
+            display: block;
+            margin: 14px 0 7px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .auth-form input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            outline: none;
+            font-size: 15px;
+        }
+
+        .auth-form input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+        }
+
+        .auth-submit {
+            width: 100%;
+            padding: 13px;
+            margin-top: 22px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .auth-submit:hover {
+            background: #1d4ed8;
+        }
+
+        .auth-message {
+            margin-top: 15px;
+            font-size: 13px;
+            text-align: center;
+            color: #dc2626;
+        }
+
+        .auth-note {
+            margin-top: 18px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #eff6ff;
+            color: #1e40af;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        #secret-id-result {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #86efac;
+            border-radius: 10px;
+            background: #f0fdf4;
+        }
+
+        #secret-id-value {
+            display: block;
+            margin: 12px 0;
+            padding: 12px;
+            border-radius: 7px;
+            background: white;
+            color: #166534;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            overflow-wrap: anywhere;
+        }
+
+        .auth-secondary {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #16a34a;
+            border-radius: 7px;
+            background: white;
+            color: #166534;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .auth-continue {
+            margin-top: 10px;
+            background: #16a34a;
+            color: white;
+        }
+
+       .auth-panel-hidden {
+    display: none !important;
+}
+
+        .app-hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 480px) {
+            .auth-card {
+                padding: 25px 20px;
+            }
+        }
+    </style>
 </head>
-
 
 <body>
 
-
-<div class="app-container">
-
-
     <!-- ==================================================
-         SIDEBAR
+         LOGIN / REGISTRATION SCREEN
          ================================================== -->
 
-    <aside
-        id="sidebar"
-        class="sidebar"
-    >
+    <section id="login-screen">
 
+        <div class="auth-card">
 
-        <!-- ==================================================
-             SIDEBAR HEADER
-             ================================================== -->
+            <div class="auth-logo">🤖</div>
 
-        <div class="sidebar-header">
+            <h1>INGRES AI</h1>
 
+            <p class="auth-subtitle">
+                Your Personal AI Virtual Assistant
+            </p>
 
-            <div class="sidebar-title">
-
-                <span class="sidebar-icon">
-                    💬
-                </span>
-
-                <span>
-                    Recent Chats
-                </span>
-
-            </div>
-
-
-            <!-- Mobile Close Button -->
-
-            <button
-                id="close-sidebar-button"
-                class="icon-button mobile-only"
-                type="button"
-                title="Close"
-            >
-                ✕
-            </button>
-
-
-        </div>
-
-
-
-        <!-- ==================================================
-             RECENT CHAT LIST
-             ================================================== -->
-
-        <div
-            id="recent-chat-list"
-            class="recent-chat-list"
-        >
-
-            <!--
-                Recent chats are loaded
-                automatically by script.js
-            -->
-
-        </div>
-
-
-
-        <!-- ==================================================
-             SIDEBAR FOOTER
-             ================================================== -->
-
-        <div class="sidebar-footer">
-
-
-            <!-- ==================================================
-                 ACCOUNT
-                 ================================================== -->
-
-            <div class="account-wrapper">
-
-
-                <!-- Account Button -->
+            <div class="auth-tabs">
 
                 <button
-                    id="account-button"
-                    class="account-button"
                     type="button"
-                >
-
-                    <span>
-                        👤
-                    </span>
-
-                    <span id="account-name">
-                        Account
-                    </span>
-
+                    id="create-tab"
+                    class="auth-tab active">
+                    Create Account
                 </button>
 
+                <button
+                    type="button"
+                    id="login-tab"
+                    class="auth-tab">
+                    Existing Account
+                </button>
 
+            </div>
 
-                <!-- ==================================================
-                     ACCOUNT MENU
-                     ================================================== -->
+            <!-- CREATE ACCOUNT -->
 
-                <div
-                    id="account-menu"
-                    class="account-menu hidden"
+            <form id="create-account-form" class="auth-form">
+
+                <label for="auth-name">
+                    Your Name
+                </label>
+
+                <input
+                    type="text"
+                    id="auth-name"
+                    placeholder="Enter your name"
+                    maxlength="100"
+                    autocomplete="name"
+                    required
                 >
 
+                <button
+                    type="submit"
+                    id="create-account-button"
+                    class="auth-submit">
+                    Create My Account
+                </button>
 
-                    <!-- User Information -->
+            </form>
 
-                    <div class="account-info">
+            <!-- EXISTING ACCOUNT LOGIN -->
 
+            <form
+                id="login-account-form"
+                class="auth-form auth-panel-hidden">
 
-                        <strong
-                            id="account-display-name"
-                        >
-                            User
-                        </strong>
+                <label for="login-name">
+                    Your Name
+                </label>
 
+                <input
+                    type="text"
+                    id="login-name"
+                    placeholder="Enter your registered name"
+                    maxlength="100"
+                    autocomplete="name"
+                    required
+                >
 
-                        <span
-                            id="account-display-email"
-                        >
-                            user@email.com
-                        </span>
+                <label for="auth-secret-id">
+                    Secret ID
+                </label>
 
+                <input
+                    type="text"
+                    id="auth-secret-id"
+                    placeholder="Example: ING-A1B2C3D4E5F6"
+                    autocomplete="off"
+                    required
+                >
 
-                    </div>
+                <button
+                    type="submit"
+                    id="login-button"
+                    class="auth-submit">
+                    Login
+                </button>
 
+            </form>
 
+            <!-- SECRET ID RESULT -->
 
-                    <!-- Login With Another Account -->
+            <div id="secret-id-result">
 
-                    <button
-                        id="switch-account-button"
-                        type="button"
-                    >
+                <strong>🎉 Account Created Successfully!</strong>
 
-                        🔄 Login with another account
+                <p>
+                    Your Secret ID is shown below.
+                    Save it somewhere safe.
+                </p>
 
-                    </button>
+                <span id="secret-id-value"></span>
 
+                <button
+                    type="button"
+                    id="copy-secret-id-button"
+                    class="auth-secondary">
+                    Copy Secret ID
+                </button>
 
+                <button
+                    type="button"
+                    id="continue-button"
+                    class="auth-secondary auth-continue">
+                    Continue to INGRES AI
+                </button>
 
-                    <!-- Logout -->
-
-                    <button
-                        id="logout-button"
-                        type="button"
-                    >
-
-                        🚪 Logout
-
-                    </button>
-
-
-                </div>
-
+                <p style="font-size: 12px; color: #166534;">
+                    Important: Your Secret ID is required to log in
+                    on another device. It cannot currently be recovered
+                    if you lose it.
+                </p>
 
             </div>
 
-
-
-            <!-- ==================================================
-                 SIDEBAR FOOTER TEXT
-                 ================================================== -->
-
-            <div class="sidebar-footer-text">
-
-
-                <span>
-                    INGRES AI
-                </span>
-
-
-                <span>
-                    Virtual Assistant
-                </span>
-
-
+            <div
+                id="auth-message"
+                class="auth-message"
+                role="alert">
             </div>
 
+            <div class="auth-note">
+                <strong>Privacy & Security</strong><br>
+                Your account uses a unique Secret ID.
+                Keep your Secret ID private and do not share it
+                with anyone.
+            </div>
 
         </div>
 
-
-    </aside>
-
+    </section>
 
 
     <!-- ==================================================
-         MAIN CHAT
+         MAIN INGRES AI APPLICATION
          ================================================== -->
 
-    <main class="chat-container">
+    <div class="app-container app-hidden" id="app-container">
 
+        <!-- SIDEBAR -->
 
+        <aside id="sidebar" class="sidebar">
 
-        <!-- ==================================================
-             HEADER
-             ================================================== -->
+            <div class="sidebar-header">
 
-        <header class="chat-header">
-
-
-            <!-- ==================================================
-                 HEADER LEFT
-                 ================================================== -->
-
-            <div class="header-left">
-
-
-                <!-- Mobile Sidebar Button -->
+                <div class="sidebar-title">
+                    <span class="sidebar-icon">💬</span>
+                    <span>Recent Chats</span>
+                </div>
 
                 <button
-                    id="open-sidebar-button"
+                    id="close-sidebar-button"
                     class="icon-button mobile-only"
                     type="button"
-                    title="Recent Chats"
-                >
-
-                    ☰
-
+                    title="Close">
+                    ✕
                 </button>
 
+            </div>
 
+            <!-- RECENT CHAT LIST -->
 
-                <!-- Bot Avatar -->
+            <div
+                id="recent-chat-list"
+                class="recent-chat-list">
+            </div>
 
-                <div class="bot-avatar">
+            <!-- SIDEBAR FOOTER -->
 
-                    🤖
+            <div class="sidebar-footer">
 
-                </div>
+                <div class="account-wrapper">
 
+                    <button
+                        id="account-button"
+                        class="account-button"
+                        type="button">
 
+                        <span>👤</span>
+                        <span id="account-name">Account</span>
 
-                <!-- Header Information -->
+                    </button>
 
-                <div class="header-info">
+                    <!-- ACCOUNT MENU -->
 
+                    <div
+                        id="account-menu"
+                        class="account-menu hidden">
 
-                    <h2>
-                        INGRES AI Assistant
-                    </h2>
+                        <div class="account-info">
 
+                            <strong id="account-display-name">
+                                User
+                            </strong>
 
-                    <div class="online-status">
+                            <span id="account-display-email">
+                                INGRES AI Account
+                            </span>
 
+                        </div>
 
-                        <span class="online-dot"></span>
+                        <button
+                            id="switch-account-button"
+                            type="button">
+                            🔄 Login with another account
+                        </button>
 
-
-                        Online
-
+                        <button
+                            id="logout-button"
+                            type="button">
+                            🚪 Logout
+                        </button>
 
                     </div>
 
+                </div>
+
+                <div class="sidebar-footer-text">
+
+                    <span>INGRES AI</span>
+                    <span>Virtual Assistant</span>
 
                 </div>
 
-
             </div>
 
-
-
-            <!-- ==================================================
-                 NEW CHAT
-                 ================================================== -->
-
-            <div class="new-chat-wrapper">
-
-
-                <!-- New Chat Button -->
-
-                <button
-                    id="new-chat-button"
-                    class="new-chat-button"
-                    type="button"
-                >
-
-                    🗑️ New Chat
-
-                </button>
-
-
-
-                <!-- ==================================================
-                     NEW CHAT MENU
-                     ================================================== -->
-
-                <div
-                    id="new-chat-menu"
-                    class="new-chat-menu hidden"
-                >
-
-
-                    <!-- Clear Chat -->
-
-                    <button
-                        id="clear-chat-button"
-                        type="button"
-                    >
-
-                        🧹 Clear Chat
-
-                    </button>
-
-
-
-                    <!-- Clear Conversation Memory -->
-
-                    <button
-                        id="clear-memory-button"
-                        type="button"
-                    >
-
-                        🧠 Clear Conversation Memory
-
-                    </button>
-
-
-
-                    <!-- Start Fresh -->
-
-                    <button
-                        id="start-fresh-button"
-                        type="button"
-                    >
-
-                        ✨ Start Fresh
-
-                    </button>
-
-
-                </div>
-
-
-            </div>
-
-
-        </header>
-
+        </aside>
 
 
         <!-- ==================================================
-             CHAT BOX
+             MAIN CHAT
              ================================================== -->
 
-        <div
-            id="chat-box"
-            class="chat-box"
-        >
+        <main class="chat-container">
+
+            <!-- HEADER -->
+
+            <header class="chat-header">
+
+                <div class="header-left">
+
+                    <button
+                        id="open-sidebar-button"
+                        class="icon-button mobile-only"
+                        type="button"
+                        title="Recent Chats">
+                        ☰
+                    </button>
+
+                    <div class="bot-avatar">
+                        🤖
+                    </div>
+
+                    <div class="header-info">
+
+                        <h2>INGRES AI Assistant</h2>
+
+                        <div class="online-status">
+                            <span class="online-dot"></span>
+                            Online
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- NEW CHAT -->
+
+                <div class="new-chat-wrapper">
+
+                    <button
+                        id="new-chat-button"
+                        class="new-chat-button"
+                        type="button">
+                        🗑️ New Chat
+                    </button>
+
+                    <div
+                        id="new-chat-menu"
+                        class="new-chat-menu hidden">
+
+                        <button
+                            id="clear-chat-button"
+                            type="button">
+                            🧹 Clear Chat
+                        </button>
+
+                        <button
+                            id="clear-memory-button"
+                            type="button">
+                            🧠 Clear Conversation Memory
+                        </button>
+
+                        <button
+                            id="start-fresh-button"
+                            type="button">
+                            ✨ Start Fresh
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </header>
 
 
-            <!-- ==================================================
-                 INITIAL WELCOME MESSAGE
-                 ================================================== -->
+            <!-- CHAT BOX -->
 
-            <div class="message bot-message">
+            <div id="chat-box" class="chat-box">
+
+                <div class="message bot-message">
+
+                    <div class="message-icon">
+                        🤖
+                    </div>
+
+                    <div class="message-content">
+
+                        <div class="message-name">
+                            INGRES Assistant
+                        </div>
+
+                        <div class="message-text">
+
+                            <p>Hello! 👋</p>
+
+                            <p>
+                                Welcome to the
+                                <strong>
+                                    INGRES AI Virtual Assistant
+                                </strong>.
+                            </p>
+
+                            <p>
+                                How can I help you today?
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
 
 
-                <!-- Bot Icon -->
+            <!-- TYPING INDICATOR -->
+
+            <div
+                id="typing"
+                class="typing-container hidden">
 
                 <div class="message-icon">
-
                     🤖
-
                 </div>
 
-
-
-                <!-- Message Content -->
-
-                <div class="message-content">
-
-
-                    <!-- Name -->
+                <div class="typing-content">
 
                     <div class="message-name">
-
                         INGRES Assistant
-
                     </div>
 
-
-
-                    <!-- Message -->
-
-                    <div class="message-text">
-
-
-                        <p>
-
-                            Hello! 👋
-
-                        </p>
-
-
-                        <p>
-
-                            Welcome to the
-
-                            <strong>
-                                INGRES AI Virtual Assistant
-                            </strong>.
-
-                        </p>
-
-
-                        <p>
-
-                            How can I help you today?
-
-                        </p>
-
-
+                    <div class="typing-bubble">
+                        <span></span>
+                        <span></span>
+                        <span></span>
                     </div>
 
-
                 </div>
-
 
             </div>
 
 
-        </div>
+            <!-- INPUT AREA -->
 
+            <div class="chat-input-area">
 
+                <input
+                    type="text"
+                    id="user-input"
+                    placeholder="Ask anything..."
+                    autocomplete="off"
+                >
 
-        <!-- ==================================================
-             TYPING INDICATOR
-             ================================================== -->
-
-        <div
-            id="typing"
-            class="typing-container hidden"
-        >
-
-
-            <!-- Bot Icon -->
-
-            <div class="message-icon">
-
-                🤖
+                <button
+                    id="send-button"
+                    type="button">
+                    Send
+                </button>
 
             </div>
 
+        </main>
+
+    </div>
 
 
-            <!-- Typing Content -->
+    <!-- JAVASCRIPT -->
 
-            <div class="typing-content">
-
-
-                <div class="message-name">
-
-                    INGRES Assistant
-
-                </div>
-
-
-
-                <div class="typing-bubble">
-
-
-                    <span></span>
-
-                    <span></span>
-
-                    <span></span>
-
-
-                </div>
-
-
-            </div>
-
-
-        </div>
-
-
-
-        <!-- ==================================================
-             INPUT AREA
-             ================================================== -->
-
-        <div class="chat-input-area">
-
-
-            <!-- User Input -->
-
-            <input
-                type="text"
-                id="user-input"
-                placeholder="Ask anything..."
-                autocomplete="off"
-            >
-
-
-
-            <!-- Send Button -->
-
-            <button
-                id="send-button"
-                type="button"
-            >
-
-                Send
-
-            </button>
-
-
-        </div>
-
-
-    </main>
-
-
-</div>
-
-
-
-<!-- ==================================================
-     JAVASCRIPT
-     ================================================== -->
-
-<script
-    src="{{ url_for('static', filename='js/script.js') }}"
-    defer
-></script>
-
+    <script
+        src="{{ url_for('static', filename='js/script.js') }}"
+        defer>
+    </script>
 
 </body>
-
 </html>
