@@ -769,6 +769,16 @@ body {
 
     line-height: 1.5;
 }
+/* Inline code inside chatbot messages */
+.message-text code {
+    background: #172033 !important;
+    color: #ffffff !important;
+    padding: 3px 7px;
+    border-radius: 5px;
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    display: inline-block;
+}
 
 
 /* ==========================================================

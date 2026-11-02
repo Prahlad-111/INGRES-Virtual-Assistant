@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,8 +17,7 @@
         <div class="nav-links">
             <a href="#features">Features</a>
             <a href="#about">About</a>
-            <a href="/login" class="nav-login">Login</a>
-            <a href="/register" class="nav-register">Get Started</a>
+            <a href="/chat" class="nav-register">Start Chatting</a>
         </div>
     </nav>
 
@@ -37,7 +37,7 @@
             </p>
 
             <div class="hero-buttons">
-                <a href="/login" class="primary-btn" id="start-button">
+                <a href="/chat" class="primary-btn" id="start-button">
                     Start Chatting →
                 </a>
                 <a href="#features" class="secondary-btn">
@@ -48,7 +48,7 @@
             <div class="trust-text">
                 <span>✦</span> Smart Conversations
                 <span>✦</span> Easy to Use
-                <span>✦</span> Secure Login
+                <span>✦</span> Personal Chat History
             </div>
         </div>
 
@@ -111,7 +111,7 @@
             <div class="feature-card">
                 <div class="feature-icon">◷</div>
                 <h3>Chat History</h3>
-                <p>Continue previous conversations with saved chat history.</p>
+                <p>Continue your previous conversations with saved chat history.</p>
             </div>
         </div>
     </section>
@@ -122,23 +122,12 @@
             INGRES AI brings AI-powered assistance into one simple
             and user-friendly platform.
         </p>
-        <a href="/register" class="primary-btn">Create Your Account →</a>
+        <a href="/chat" class="primary-btn">Start Chatting →</a>
     </section>
 
     <footer>
         © 2026 INGRES AI Virtual Assistant. All rights reserved.
     </footer>
-
-    <script>
-        // Send already logged-in users directly to the chatbot.
-        const token = localStorage.getItem("ingres_token");
-
-        if (token) {
-            const startButton = document.getElementById("start-button");
-            startButton.href = "/chat";
-            startButton.textContent = "Open Dashboard →";
-        }
-    </script>
 
 </body>
 </html>
