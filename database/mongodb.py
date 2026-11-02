@@ -56,19 +56,34 @@ password_resets_collection = db["password_resets"]
 # CREATE UNIQUE EMAIL INDEX
 # =========================================================
 
-try:
+# =========================================================
+# FIX EMAIL INDEX FOR SECRET ID ACCOUNTS
+# =========================================================
 
+try:
+    # Remove the old index that treats multiple NULL values
+    # as duplicate email addresses.
+    try:
+        users_collection.drop_index("email_1")
+        print("[INDEX] Old email index removed.")
+    except Exception:
+        pass
+
+    # Keep email uniqueness for accounts that actually have
+    # a string email address.
     users_collection.create_index(
-        "email",
-        unique=True
+        [("email", 1)],
+        unique=True,
+        partialFilterExpression={
+            "email": {"$type": "string"}
+        },
+        name="email_string_unique"
     )
+
+    print("[INDEX] Email index configured successfully.")
 
 except Exception as error:
-
-    print(
-        "[INDEX WARNING]",
-        error
-    )
+    print("[INDEX WARNING]", error)
 
 # =========================================================
 # CREATE UNIQUE SECRET ID INDEX
