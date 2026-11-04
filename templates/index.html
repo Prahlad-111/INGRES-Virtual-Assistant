@@ -1,11 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>INGRES AI Virtual Assistant</title>
 
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
@@ -13,7 +10,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard-theme.css') }}">
 
     <style>
-        /* AUTHENTICATION SCREEN */
         #login-screen {
             min-height: 100vh;
             display: flex;
@@ -29,9 +25,9 @@
             max-width: 430px;
             padding: 35px;
             border-radius: 18px;
-            background: #ffffff;
+            background: #fff;
             color: #1e293b;
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, .3);
         }
 
         .auth-logo {
@@ -95,7 +91,29 @@
 
         .auth-form input:focus {
             border-color: #2563eb;
-            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, .12);
+        }
+
+        .password-field {
+            position: relative;
+        }
+
+        .password-field input {
+            padding-right: 76px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 0;
+            background: transparent;
+            color: #2563eb;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px;
         }
 
         .auth-submit {
@@ -115,6 +133,11 @@
             background: #1d4ed8;
         }
 
+        .auth-submit:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+
         .auth-message {
             margin-top: 15px;
             font-size: 13px;
@@ -132,50 +155,25 @@
             line-height: 1.6;
         }
 
-        #secret-id-result {
-            display: none;
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px solid #86efac;
-            border-radius: 10px;
-            background: #f0fdf4;
-        }
-
-        #secret-id-value {
+        .auth-link-button {
             display: block;
-            margin: 12px 0;
-            padding: 12px;
-            border-radius: 7px;
-            background: white;
-            color: #166534;
-            text-align: center;
-            font-size: 20px;
-            font-weight: bold;
-            letter-spacing: 2px;
-            overflow-wrap: anywhere;
-        }
-
-        .auth-secondary {
             width: 100%;
-            padding: 11px;
-            border: 1px solid #16a34a;
-            border-radius: 7px;
-            background: white;
-            color: #166534;
+            margin-top: 12px;
+            padding: 9px;
+            border: none;
+            background: transparent;
+            color: #2563eb;
             cursor: pointer;
             font-weight: 600;
         }
 
-        .auth-continue {
-            margin-top: 10px;
-            background: #16a34a;
-            color: white;
+        .auth-helper {
+            color: #64748b;
+            font-size: 13px;
+            line-height: 1.5;
         }
 
-       .auth-panel-hidden {
-    display: none !important;
-}
-
+        .auth-panel-hidden,
         .app-hidden {
             display: none !important;
         }
@@ -190,34 +188,28 @@
 
 <body>
 
-    <!-- ==================================================
-         LOGIN / REGISTRATION SCREEN
-         ================================================== -->
+    <!-- AUTHENTICATION SCREEN -->
 
     <section id="login-screen">
-
         <div class="auth-card">
 
             <div class="auth-logo">🤖</div>
-
             <h1>INGRES AI</h1>
 
             <p class="auth-subtitle">
                 Your Personal AI Virtual Assistant
             </p>
 
+            <!-- AUTHENTICATION TABS -->
+
             <div class="auth-tabs">
 
-                <button
-                    type="button"
-                    id="create-tab"
+                <button type="button" id="create-tab"
                     class="auth-tab active">
                     Create Account
                 </button>
 
-                <button
-                    type="button"
-                    id="login-tab"
+                <button type="button" id="login-tab"
                     class="auth-tab">
                     Existing Account
                 </button>
@@ -228,21 +220,64 @@
 
             <form id="create-account-form" class="auth-form">
 
-                <label for="auth-name">
-                    Your Name
-                </label>
+                <label for="auth-name">Your Name</label>
 
-                <input
-                    type="text"
-                    id="auth-name"
+                <input type="text" id="auth-name"
                     placeholder="Enter your name"
                     maxlength="100"
                     autocomplete="name"
-                    required
-                >
+                    required>
 
-                <button
-                    type="submit"
+                <label for="auth-email">Email Address</label>
+
+                <input type="email" id="auth-email"
+                    placeholder="Enter your email"
+                    maxlength="254"
+                    autocomplete="email"
+                    required>
+
+                <label for="auth-password">Password</label>
+
+                <div class="password-field">
+
+                    <input type="password" id="auth-password"
+                        placeholder="At least 8 characters"
+                        minlength="8"
+                        autocomplete="new-password"
+                        required>
+
+                    <button type="button"
+                        class="password-toggle"
+                        data-toggle-password="auth-password"
+                        aria-label="Show password">
+                        Show
+                    </button>
+
+                </div>
+
+                <label for="auth-confirm-password">
+                    Confirm Password
+                </label>
+
+                <div class="password-field">
+
+                    <input type="password"
+                        id="auth-confirm-password"
+                        placeholder="Re-enter your password"
+                        minlength="8"
+                        autocomplete="new-password"
+                        required>
+
+                    <button type="button"
+                        class="password-toggle"
+                        data-toggle-password="auth-confirm-password"
+                        aria-label="Show confirm password">
+                        Show
+                    </button>
+
+                </div>
+
+                <button type="submit"
                     id="create-account-button"
                     class="auth-submit">
                     Create My Account
@@ -250,102 +285,232 @@
 
             </form>
 
-            <!-- EXISTING ACCOUNT LOGIN -->
+            <!-- REGISTRATION OTP -->
 
-            <form
-                id="login-account-form"
+            <form id="verify-registration-form"
                 class="auth-form auth-panel-hidden">
 
-                <label for="login-name">
-                    Your Name
+                <h2>Verify Your Email</h2>
+
+                <p class="auth-helper">
+                    Enter the 6-digit OTP sent to your email.
+                    It expires in 5 minutes.
+                </p>
+
+                <p>
+                    OTP sent to
+                    <strong id="registration-otp-email"></strong>
+                </p>
+
+                <label for="registration-otp">
+                    Verification OTP
                 </label>
 
-                <input
-                    type="text"
-                    id="login-name"
-                    placeholder="Enter your registered name"
-                    maxlength="100"
-                    autocomplete="name"
-                    required
-                >
+                <input type="text" id="registration-otp"
+                    inputmode="numeric"
+                    pattern="[0-9]{6}"
+                    maxlength="6"
+                    autocomplete="one-time-code"
+                    placeholder="6-digit code"
+                    required>
 
-                <label for="auth-secret-id">
-                    Secret ID
-                </label>
-
-                <input
-                    type="text"
-                    id="auth-secret-id"
-                    placeholder="Example: ING-A1B2C3D4E5F6"
-                    autocomplete="off"
-                    required
-                >
-
-                <button
-                    type="submit"
-                    id="login-button"
+                <button type="submit"
+                    id="verify-registration-button"
                     class="auth-submit">
-                    Login
+                    Verify Email
+                </button>
+
+                <button type="button"
+                    id="registration-back-button"
+                    class="auth-link-button">
+                    Back to registration
                 </button>
 
             </form>
 
-            <!-- SECRET ID RESULT -->
+            <!-- LOGIN -->
 
-            <div id="secret-id-result">
+            <form id="login-account-form"
+                class="auth-form auth-panel-hidden"
+                onsubmit="return false;">
 
-                <strong>🎉 Account Created Successfully!</strong>
+                <label for="login-email">Email Address</label>
+
+                <input type="email" id="login-email"
+                    placeholder="Enter your registered email"
+                    maxlength="254"
+                    autocomplete="email"
+                    required>
+
+                <label for="login-password">Password</label>
+
+                <input type="password" id="login-password"
+                    placeholder="Enter your password"
+                    autocomplete="current-password"
+                    required>
+
+                <button type="submit"
+                    id="login-button"
+                    class="auth-submit">
+                    Continue
+                </button>
+
+                <button type="button"
+                    id="forgot-password-link"
+                    class="auth-link-button">
+                    Forgot Password?
+                </button>
+
+            </form>
+
+            <!-- LOGIN OTP -->
+
+            <form id="verify-login-form"
+                class="auth-form auth-panel-hidden">
+
+                <h2>Login Verification</h2>
+
+                <p class="auth-helper">
+                    Enter the 6-digit OTP sent to your email.
+                </p>
 
                 <p>
-                    Your Secret ID is shown below.
-                    Save it somewhere safe.
+                    OTP sent to
+                    <strong id="login-otp-email"></strong>
                 </p>
 
-                <span id="secret-id-value"></span>
+                <label for="login-otp">Login OTP</label>
 
-                <button
-                    type="button"
-                    id="copy-secret-id-button"
-                    class="auth-secondary">
-                    Copy Secret ID
+                <input type="text" id="login-otp"
+                    inputmode="numeric"
+                    pattern="[0-9]{6}"
+                    maxlength="6"
+                    autocomplete="one-time-code"
+                    placeholder="6-digit code"
+                    required>
+
+                <button type="submit"
+                    id="verify-login-button"
+                    class="auth-submit">
+                    Verify &amp; Login
                 </button>
 
-                <button
-                    type="button"
-                    id="continue-button"
-                    class="auth-secondary auth-continue">
-                    Continue to INGRES AI
+                <button type="button"
+                    id="login-back-button"
+                    class="auth-link-button">
+                    Back to login
                 </button>
 
-                <p style="font-size: 12px; color: #166534;">
-                    Important: Your Secret ID is required to log in
-                    on another device. It cannot currently be recovered
-                    if you lose it.
+            </form>
+
+            <!-- FORGOT PASSWORD -->
+
+            <form id="forgot-password-form"
+                class="auth-form auth-panel-hidden">
+
+                <h2>Forgot Password</h2>
+
+                <p class="auth-helper">
+                    Enter your registered email to receive a reset OTP.
                 </p>
 
-            </div>
+                <label for="reset-email">Email Address</label>
 
-            <div
-                id="auth-message"
+                <input type="email" id="reset-email"
+                    maxlength="254"
+                    autocomplete="email"
+                    placeholder="Enter your email"
+                    required>
+
+                <button type="submit"
+                    id="forgot-password-button"
+                    class="auth-submit">
+                    Send Reset OTP
+                </button>
+
+                <button type="button"
+                    id="forgot-back-button"
+                    class="auth-link-button">
+                    Back to login
+                </button>
+
+            </form>
+
+            <!-- RESET PASSWORD -->
+
+            <form id="reset-password-form"
+                class="auth-form auth-panel-hidden">
+
+                <h2>Reset Password</h2>
+
+                <p class="auth-helper">
+                    Enter the OTP from your email and choose a new password.
+                </p>
+
+                <p>
+                    OTP sent to
+                    <strong id="reset-otp-email"></strong>
+                </p>
+
+                <label for="reset-otp">Reset OTP</label>
+
+                <input type="text" id="reset-otp"
+                    inputmode="numeric"
+                    pattern="[0-9]{6}"
+                    maxlength="6"
+                    autocomplete="one-time-code"
+                    placeholder="6-digit code"
+                    required>
+
+                <label for="reset-new-password">
+                    New Password
+                </label>
+
+                <input type="password" id="reset-new-password"
+                    minlength="8"
+                    autocomplete="new-password"
+                    placeholder="At least 8 characters"
+                    required>
+
+                <button type="submit"
+                    id="reset-password-button"
+                    class="auth-submit">
+                    Reset Password
+                </button>
+
+                <button type="button"
+                    id="reset-back-button"
+                    class="auth-link-button">
+                    Back to login
+                </button>
+
+            </form>
+
+            <!-- AUTH MESSAGE -->
+
+            <div id="auth-message"
                 class="auth-message"
-                role="alert">
+                role="status"
+                aria-live="polite">
             </div>
+
+            <!-- SECURITY NOTE -->
 
             <div class="auth-note">
-                <strong>Privacy & Security</strong><br>
-                Your account uses a unique Secret ID.
-                Keep your Secret ID private and do not share it
-                with anyone.
+
+                <strong>Privacy &amp; Security</strong>
+
+                <p>
+                    We verify your email with a one-time code.
+                    Never share your password or OTP with anyone.
+                </p>
+
             </div>
 
         </div>
-
     </section>
 
-
-    <!-- ==================================================
-         MAIN INGRES AI APPLICATION
-         ================================================== -->
+    <!-- MAIN INGRES AI APPLICATION -->
 
     <div class="app-container app-hidden" id="app-container">
 
@@ -360,8 +525,7 @@
                     <span>Recent Chats</span>
                 </div>
 
-                <button
-                    id="close-sidebar-button"
+                <button id="close-sidebar-button"
                     class="icon-button mobile-only"
                     type="button"
                     title="Close">
@@ -370,21 +534,17 @@
 
             </div>
 
-            <!-- RECENT CHAT LIST -->
-
-            <div
-                id="recent-chat-list"
+            <div id="recent-chat-list"
                 class="recent-chat-list">
             </div>
 
-            <!-- SIDEBAR FOOTER -->
+            <!-- ACCOUNT MENU -->
 
             <div class="sidebar-footer">
 
                 <div class="account-wrapper">
 
-                    <button
-                        id="account-button"
+                    <button id="account-button"
                         class="account-button"
                         type="button">
 
@@ -393,10 +553,7 @@
 
                     </button>
 
-                    <!-- ACCOUNT MENU -->
-
-                    <div
-                        id="account-menu"
+                    <div id="account-menu"
                         class="account-menu hidden">
 
                         <div class="account-info">
@@ -411,14 +568,12 @@
 
                         </div>
 
-                        <button
-                            id="switch-account-button"
+                        <button id="switch-account-button"
                             type="button">
                             🔄 Login with another account
                         </button>
 
-                        <button
-                            id="logout-button"
+                        <button id="logout-button"
                             type="button">
                             🚪 Logout
                         </button>
@@ -428,40 +583,30 @@
                 </div>
 
                 <div class="sidebar-footer-text">
-
                     <span>INGRES AI</span>
                     <span>Virtual Assistant</span>
-
                 </div>
 
             </div>
 
         </aside>
 
-
-        <!-- ==================================================
-             MAIN CHAT
-             ================================================== -->
+        <!-- MAIN CHAT -->
 
         <main class="chat-container">
-
-            <!-- HEADER -->
 
             <header class="chat-header">
 
                 <div class="header-left">
 
-                    <button
-                        id="open-sidebar-button"
+                    <button id="open-sidebar-button"
                         class="icon-button mobile-only"
                         type="button"
                         title="Recent Chats">
                         ☰
                     </button>
 
-                    <div class="bot-avatar">
-                        🤖
-                    </div>
+                    <div class="bot-avatar">🤖</div>
 
                     <div class="header-info">
 
@@ -480,31 +625,26 @@
 
                 <div class="new-chat-wrapper">
 
-                    <button
-                        id="new-chat-button"
+                    <button id="new-chat-button"
                         class="new-chat-button"
                         type="button">
                         🗑️ New Chat
                     </button>
 
-                    <div
-                        id="new-chat-menu"
+                    <div id="new-chat-menu"
                         class="new-chat-menu hidden">
 
-                        <button
-                            id="clear-chat-button"
+                        <button id="clear-chat-button"
                             type="button">
                             🧹 Clear Chat
                         </button>
 
-                        <button
-                            id="clear-memory-button"
+                        <button id="clear-memory-button"
                             type="button">
                             🧠 Clear Conversation Memory
                         </button>
 
-                        <button
-                            id="start-fresh-button"
+                        <button id="start-fresh-button"
                             type="button">
                             ✨ Start Fresh
                         </button>
@@ -515,16 +655,13 @@
 
             </header>
 
-
             <!-- CHAT BOX -->
 
             <div id="chat-box" class="chat-box">
 
                 <div class="message bot-message">
 
-                    <div class="message-icon">
-                        🤖
-                    </div>
+                    <div class="message-icon">🤖</div>
 
                     <div class="message-content">
 
@@ -537,15 +674,11 @@
                             <p>Hello! 👋</p>
 
                             <p>
-                                Welcome to the
-                                <strong>
-                                    INGRES AI Virtual Assistant
-                                </strong>.
+                                Welcome to
+                                <strong>INGRES AI Virtual Assistant</strong>.
                             </p>
 
-                            <p>
-                                How can I help you today?
-                            </p>
+                            <p>How can I help you today?</p>
 
                         </div>
 
@@ -555,16 +688,12 @@
 
             </div>
 
-
             <!-- TYPING INDICATOR -->
 
-            <div
-                id="typing"
+            <div id="typing"
                 class="typing-container hidden">
 
-                <div class="message-icon">
-                    🤖
-                </div>
+                <div class="message-icon">🤖</div>
 
                 <div class="typing-content">
 
@@ -582,21 +711,16 @@
 
             </div>
 
-
-            <!-- INPUT AREA -->
+            <!-- CHAT INPUT -->
 
             <div class="chat-input-area">
 
-                <input
-                    type="text"
+                <input type="text"
                     id="user-input"
                     placeholder="Ask anything..."
-                    autocomplete="off"
-                >
+                    autocomplete="off">
 
-                <button
-                    id="send-button"
-                    type="button">
+                <button id="send-button" type="button">
                     Send
                 </button>
 
@@ -606,11 +730,10 @@
 
     </div>
 
-
-    <!-- JAVASCRIPT -->
+    <!-- MAIN APPLICATION JAVASCRIPT -->
 
     <script
-        src="{{ url_for('static', filename='js/script.js') }}"
+        src="{{ url_for('static', filename='js/script.js', v='20261104-1') }}"
         defer>
     </script>
 

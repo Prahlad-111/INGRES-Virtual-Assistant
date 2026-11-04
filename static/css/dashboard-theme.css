@@ -401,3 +401,117 @@ body {
         min-height: 46px;
     }
 }
+/* ChatGPT-style alignment and readable assistant responses */
+#chat-box .message {
+    display: flex;
+    width: 100%;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#chat-box .bot-message {
+    justify-content: flex-start;
+}
+
+#chat-box .user-message {
+    justify-content: flex-end;
+}
+
+#chat-box .message-content {
+    display: flex;
+    flex-direction: column;
+    max-width: min(850px, 80%);
+    min-width: 0;
+}
+
+#chat-box .user-message .message-content {
+    order: 1;
+    align-items: flex-end;
+}
+
+#chat-box .user-message .message-icon {
+    order: 2;
+}
+
+#chat-box .user-message .message-name {
+    text-align: right;
+}
+
+#chat-box .bot-message .message-text {
+    background: #1b2944;
+    color: #edf1ff;
+    border-radius: 5px 12px 12px 12px;
+}
+
+#chat-box .user-message .message-text {
+    background: #3158a8;
+    color: #fff;
+    border-radius: 12px 5px 12px 12px;
+}
+
+#chat-box .message-text p {
+    margin: 0 0 12px;
+}
+
+#chat-box .message-text p:last-child {
+    margin-bottom: 0;
+}
+
+#chat-box .message-text h1,
+#chat-box .message-text h2,
+#chat-box .message-text h3 {
+    margin: 14px 0 8px;
+    color: inherit;
+    line-height: 1.35;
+}
+
+#chat-box .message-text ul,
+#chat-box .message-text ol {
+    margin: 8px 0 12px;
+    padding-left: 24px;
+}
+
+#chat-box .message-text li {
+    margin: 4px 0;
+}
+
+#chat-box .message-text code {
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.22);
+    color: inherit;
+    font-family: Consolas, monospace;
+}
+
+#chat-box .message-text pre {
+    overflow-x: auto;
+    margin: 12px 0;
+    padding: 14px;
+    border-radius: 8px;
+    background: #0c1424;
+    color: #edf1ff;
+    white-space: pre;
+}
+
+#chat-box .message-text pre code {
+    padding: 0;
+    background: transparent;
+}
+
+@media (max-width: 600px) {
+    #chat-box .message-content {
+        max-width: 88%;
+    }
+}
+#sidebar .sidebar-header {
+    background: #17233b !important;
+}
+
+#sidebar .sidebar-title {
+    color: #ffffff !important;
+}
+
+#sidebar .sidebar-icon {
+    color: #a5a9ff !important;
+}

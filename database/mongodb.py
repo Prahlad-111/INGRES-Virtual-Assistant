@@ -1,39 +1,28 @@
 import os
-from datetime import datetime, timezone
-
 import bcrypt
+
+from datetime import datetime, timezone
 from bson import ObjectId
 from dotenv import load_dotenv
 from pymongo import MongoClient, DESCENDING
 
 
 # =========================================================
-# LOAD ENVIRONMENT VARIABLES
+# ENVIRONMENT AND MONGODB CONFIGURATION
 # =========================================================
 
 load_dotenv()
 
-
-# =========================================================
-# MONGODB CONFIGURATION
-# =========================================================
-
 MONGO_URI = os.getenv("MONGO_URI")
-
 DATABASE_NAME = "ingres_ai"
 
-
 if not MONGO_URI:
-    raise RuntimeError(
-        "MONGO_URI is not set in the .env file."
-    )
-
+    raise RuntimeError("MONGO_URI is not configured in .env")
 
 client = MongoClient(
     MONGO_URI,
     serverSelectionTimeoutMS=5000
 )
-
 
 db = client[DATABASE_NAME]
 
@@ -43,34 +32,19 @@ db = client[DATABASE_NAME]
 # =========================================================
 
 users_collection = db["users"]
-
 conversations_collection = db["conversations"]
-
 messages_collection = db["messages"]
 
 pending_registrations_collection = db["pending_registrations"]
+email_otps_collection = db["email_otps"]
 password_resets_collection = db["password_resets"]
 
 
 # =========================================================
-# CREATE UNIQUE EMAIL INDEX
-# =========================================================
-
-# =========================================================
-# FIX EMAIL INDEX FOR SECRET ID ACCOUNTS
+# DATABASE INDEXES
 # =========================================================
 
 try:
-    # Remove the old index that treats multiple NULL values
-    # as duplicate email addresses.
-    try:
-        users_collection.drop_index("email_1")
-        print("[INDEX] Old email index removed.")
-    except Exception:
-        pass
-
-    # Keep email uniqueness for accounts that actually have
-    # a string email address.
     users_collection.create_index(
         [("email", 1)],
         unique=True,
@@ -80,606 +54,155 @@ try:
         name="email_string_unique"
     )
 
-    print("[INDEX] Email index configured successfully.")
-
-except Exception as error:
-    print("[INDEX WARNING]", error)
-
-# =========================================================
-# CREATE UNIQUE SECRET ID INDEX
-# =========================================================
-
-try:
-    users_collection.create_index(
-        "secret_id_hash",
-        unique=True,
-        sparse=True
-    )
-except Exception as error:
-    print("[SECRET ID INDEX WARNING]", error)
-# =========================================================
-# TEST MONGODB CONNECTION
-# =========================================================
-
-def test_connection():
-
-    try:
-
-        client.admin.command("ping")
-
-        print(
-            "MongoDB connected successfully!"
-        )
-
-        print(
-            f"Database: {DATABASE_NAME}"
-        )
-
-        print("Collections:")
-
-        print(" - users")
-        print(" - conversations")
-        print(" - messages")
-
-        return True
-
-    except Exception as error:
-
-        print(
-            "MongoDB connection failed!"
-        )
-
-        print(
-            "Error:",
-            error
-        )
-
-        return False
-
-
-# =========================================================
-# CREATE USER
-# =========================================================
-
-def create_user(
-    name,
-    email,
-    password
-):
-
-    name = name.strip()
-
-    email = email.strip().lower()
-
-
-    # Check whether email already exists
-
-    existing_user = users_collection.find_one(
-        {
-            "email": email
-        }
+    pending_registrations_collection.create_index(
+        "expires_at",
+        expireAfterSeconds=0
     )
 
+    email_otps_collection.create_index(
+        "expires_at",
+        expireAfterSeconds=0
+    )
 
-    if existing_user:
+    password_resets_collection.create_index(
+        "expires_at",
+        expireAfterSeconds=0
+    )
 
+    print("[INDEX] MongoDB indexes configured.")
+
+except Exception as error:
+    print("[INDEX WARNING]", type(error).__name__)
+
+
+# =========================================================
+# COMMON HELPERS
+# =========================================================
+
+def normalize_email(email):
+    return str(email or "").strip().lower()
+
+
+def format_datetime(value):
+    if value is None:
         return None
 
+    if isinstance(value, datetime):
+        return value.strftime("%Y-%m-%d %H:%M:%S")
 
-    # Hash password
+    return str(value)
 
-    password_hash = bcrypt.hashpw(
+
+def hash_password(password):
+    if not password or len(password) < 8 or len(password) > 72:
+        raise ValueError("Password must contain 8-72 characters.")
+
+    return bcrypt.hashpw(
         password.encode("utf-8"),
         bcrypt.gensalt()
     ).decode("utf-8")
 
 
-    now = datetime.now(
-        timezone.utc
-    )
-
-
-    user_document = {
-
-        "name": name,
-
-        "email": email,
-
-        "password_hash": password_hash,
-
-        "created_at": now,
-
-        "updated_at": now
-
-    }
-
-
+def verify_password(password, password_hash):
     try:
-
-        result = users_collection.insert_one(
-            user_document
-        )
-
-        return str(
-            result.inserted_id
-        )
-
-    except Exception as error:
-
-        print(
-            "[CREATE USER ERROR]",
-            error
-        )
-
-        return None
-
-
-# =========================================================
-# GET USER BY EMAIL
-# =========================================================
-
-def get_user_by_email(email):
-
-    email = email.strip().lower()
-
-    return users_collection.find_one(
-        {
-            "email": email
-        }
-    )
-
-
-# =========================================================
-# GET USER BY ID
-# =========================================================
-
-def get_user_by_id(user_id):
-
-    try:
-
-        return users_collection.find_one(
-            {
-                "_id": ObjectId(user_id)
-            }
-        )
-
-    except Exception:
-
-        return None
-
-
-# =========================================================
-# VERIFY PASSWORD
-# =========================================================
-
-def verify_password(
-    password,
-    password_hash
-):
-
-    try:
-
         return bcrypt.checkpw(
             password.encode("utf-8"),
             password_hash.encode("utf-8")
         )
 
     except Exception:
+        return False
+
+
+# =========================================================
+# TEST MONGODB CONNECTION
+# =========================================================
+
+def test_connection():
+    try:
+        client.admin.command("ping")
+
+        print("MongoDB connected successfully!")
+        print(f"Database: {DATABASE_NAME}")
+
+        return True
+
+    except Exception as error:
+        print("MongoDB connection failed!")
+        print("Error:", type(error).__name__)
 
         return False
 
 
 # =========================================================
-# CREATE CONVERSATION
+# USER ACCOUNT FUNCTIONS
 # =========================================================
 
-def create_conversation(
-    user_id,
-    title="New Chat"
-):
+def create_user(name, email, password):
+    """
+    Direct account creation is disabled.
 
-    now = datetime.now(
-        timezone.utc
+    New accounts must be created through:
+    save_pending_registration()
+    followed by successful OTP verification.
+    """
+
+    print(
+        "[CREATE USER BLOCKED] "
+        "Use email OTP verification to create accounts."
     )
 
-
-    document = {
-
-        "user_id": ObjectId(user_id),
-
-        "title": title,
-
-        "created_at": now,
-
-        "updated_at": now
-
-    }
+    return None
 
 
-    result = conversations_collection.insert_one(
-        document
-    )
+def get_user_by_email(email):
+    return users_collection.find_one({
+        "email": normalize_email(email)
+    })
 
 
-    return str(
-        result.inserted_id
-    )
-
-
-# =========================================================
-# GET USER CONVERSATION
-# =========================================================
-
-def get_user_conversation(
-    conversation_id,
-    user_id
-):
-
+def get_user_by_id(user_id):
     try:
-
-        return conversations_collection.find_one(
-            {
-                "_id": ObjectId(conversation_id),
-
-                "user_id": ObjectId(user_id)
-            }
-        )
+        return users_collection.find_one({
+            "_id": ObjectId(user_id)
+        })
 
     except Exception:
-
         return None
 
 
-# =========================================================
-# ADD MESSAGE
-# =========================================================
-
-def add_message(
-    conversation_id,
-    role,
-    message
-):
-
-    now = datetime.now(
-        timezone.utc
-    )
-
-
-    conversation_object_id = ObjectId(
-        conversation_id
-    )
-
-
-    document = {
-
-        "conversation_id":
-            conversation_object_id,
-
-        "role":
-            role,
-
-        "message":
-            message,
-
-        "created_at":
-            now
-
-    }
-
-
-    result = messages_collection.insert_one(
-        document
-    )
-
-
-    # Update conversation timestamp
-
-    conversations_collection.update_one(
-
-        {
-            "_id":
-                conversation_object_id
-        },
-
-        {
-            "$set":
-                {
-                    "updated_at":
-                        now
-                }
+def update_user_profile(user_id, name=None, profile_image_url=None):
+    try:
+        updates = {
+            "updated_at": datetime.now(timezone.utc)
         }
 
-    )
+        if name is not None:
+            name = name.strip()
 
+            if not name or len(name) > 100:
+                return False
 
-    return str(
-        result.inserted_id
-    )
+            updates["name"] = name
 
+        if profile_image_url is not None:
+            updates["profile_image_url"] = profile_image_url
 
-# =========================================================
-# GET USER CONVERSATIONS
-# =========================================================
-
-def get_conversations(
-    user_id
-):
-
-    user_object_id = ObjectId(
-        user_id
-    )
-
-
-    conversations = (
-
-        conversations_collection
-
-        .find(
-            {
-                "user_id":
-                    user_object_id
-            }
+        result = users_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": updates}
         )
 
-        .sort(
-            "updated_at",
-            DESCENDING
-        )
+        return result.matched_count == 1
 
-    )
-
-
-    result = []
-
-
-    for conversation in conversations:
-
-        result.append(
-
-            {
-                "id":
-                    str(
-                        conversation["_id"]
-                    ),
-
-                "title":
-                    conversation.get(
-                        "title",
-                        "New Chat"
-                    ),
-
-                "created_at":
-                    format_datetime(
-                        conversation.get(
-                            "created_at"
-                        )
-                    ),
-
-                "updated_at":
-                    format_datetime(
-                        conversation.get(
-                            "updated_at"
-                        )
-                    )
-            }
-
-        )
-
-
-    return result
-
-
-# =========================================================
-# GET MESSAGES
-# =========================================================
-
-def get_messages(
-    conversation_id
-):
-
-    messages = (
-
-        messages_collection
-
-        .find(
-            {
-                "conversation_id":
-                    ObjectId(
-                        conversation_id
-                    )
-            }
-        )
-
-        .sort(
-            "created_at",
-            1
-        )
-
-    )
-
-
-    result = []
-
-
-    for message in messages:
-
-        result.append(
-
-            {
-                "id":
-                    str(
-                        message["_id"]
-                    ),
-
-                "conversation_id":
-                    str(
-                        message["conversation_id"]
-                    ),
-
-                "role":
-                    message.get(
-                        "role"
-                    ),
-
-                "message":
-                    message.get(
-                        "message",
-                        ""
-                    ),
-
-                "created_at":
-                    format_datetime(
-                        message.get(
-                            "created_at"
-                        )
-                    )
-            }
-
-        )
-
-
-    return result
-
-
-# =========================================================
-# DELETE CONVERSATION
-# =========================================================
-
-def delete_conversation(
-    conversation_id,
-    user_id
-):
-
-    conversation = get_user_conversation(
-        conversation_id,
-        user_id
-    )
-
-
-    if not conversation:
-
+    except Exception as error:
+        print("[PROFILE UPDATE ERROR]", type(error).__name__)
         return False
 
 
-    object_id = ObjectId(
-        conversation_id
-    )
-
-
-    # Delete conversation
-
-    conversations_collection.delete_one(
-        {
-            "_id": object_id,
-
-            "user_id":
-                ObjectId(user_id)
-        }
-    )
-
-
-    # Delete all messages belonging
-    # to the conversation
-
-    messages_collection.delete_many(
-        {
-            "conversation_id":
-                object_id
-        }
-    )
-
-
-    return True
-
-
 # =========================================================
-# UPDATE CONVERSATION TITLE
+# REGISTRATION OTP FUNCTIONS
 # =========================================================
-
-def update_conversation_title(
-    conversation_id,
-    user_id,
-    title
-):
-
-    conversation = get_user_conversation(
-        conversation_id,
-        user_id
-    )
-
-
-    if not conversation:
-
-        return False
-
-
-    conversations_collection.update_one(
-
-        {
-            "_id":
-                ObjectId(conversation_id),
-
-            "user_id":
-                ObjectId(user_id)
-        },
-
-        {
-            "$set":
-                {
-                    "title":
-                        title,
-
-                    "updated_at":
-                        datetime.now(
-                            timezone.utc
-                        )
-                }
-        }
-
-    )
-
-
-    return True
-
-
-# =========================================================
-# FORMAT DATETIME
-# =========================================================
-
-def format_datetime(
-    value
-):
-
-    if value is None:
-
-        return None
-
-
-    if isinstance(
-        value,
-        datetime
-    ):
-
-        return value.strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
-
-
-    return str(value)
-
-# =========================================================
-# EMAIL OTP - PENDING REGISTRATION FUNCTIONS
-# =========================================================
-
-# MongoDB automatically removes expired pending registrations.
-try:
-    pending_registrations_collection.create_index(
-        "expires_at",
-        expireAfterSeconds=0
-    )
-except Exception as error:
-    print("[PENDING REGISTRATION INDEX WARNING]", error)
-
 
 def save_pending_registration(
     name,
@@ -688,18 +211,21 @@ def save_pending_registration(
     otp_hash,
     expires_at
 ):
-    """Save a pending registration without activating the account."""
+    name = str(name or "").strip()
+    email = normalize_email(email)
 
-    name = name.strip()
-    email = email.strip().lower()
+    if not name or len(name) > 100:
+        return False
+
+    if not password or len(password) < 8 or len(password) > 72:
+        return False
+
+    # Do not allow duplicate permanent accounts.
+    if get_user_by_email(email):
+        return False
 
     try:
-        # Never store the password in plain text.
-        password_hash = bcrypt.hashpw(
-            password.encode("utf-8"),
-            bcrypt.gensalt()
-        ).decode("utf-8")
-
+        password_hash = hash_password(password)
         now = datetime.now(timezone.utc)
 
         pending_registrations_collection.update_one(
@@ -722,22 +248,18 @@ def save_pending_registration(
         return True
 
     except Exception as error:
-        print("[SAVE PENDING REGISTRATION ERROR]", error)
+        print("[SAVE REGISTRATION ERROR]", type(error).__name__)
         return False
 
 
 def get_pending_registration(email):
-    """Find a pending registration by email."""
-
     return pending_registrations_collection.find_one({
-        "email": email.strip().lower()
+        "email": normalize_email(email)
     })
 
 
 def increment_pending_otp_attempts(email):
-    """Increase the number of OTP verification attempts."""
-
-    email = email.strip().lower()
+    email = normalize_email(email)
 
     pending_registrations_collection.update_one(
         {"email": email},
@@ -750,19 +272,23 @@ def increment_pending_otp_attempts(email):
 
 
 def delete_pending_registration(email):
-    """Delete a pending registration."""
-
     result = pending_registrations_collection.delete_one({
-        "email": email.strip().lower()
+        "email": normalize_email(email)
     })
 
     return result.deleted_count > 0
 
 
 def create_verified_user_from_pending(email):
-    """Create the permanent account after OTP verification."""
+    """
+    Create a permanent verified account after successful OTP
+    verification.
 
-    email = email.strip().lower()
+    Returns the complete user dictionary.
+    """
+
+    email = normalize_email(email)
+
     pending = get_pending_registration(email)
 
     if not pending:
@@ -788,39 +314,118 @@ def create_verified_user_from_pending(email):
     try:
         result = users_collection.insert_one(user_document)
 
-        # Remove the pending record only after account creation succeeds.
+        user_document["_id"] = result.inserted_id
+
+        # Delete pending registration after account creation.
         delete_pending_registration(email)
 
-        return str(result.inserted_id)
+        return user_document
 
     except Exception as error:
-        print("[CREATE VERIFIED USER ERROR]", error)
+        print("[CREATE VERIFIED USER ERROR]", type(error).__name__)
         return None
 
-# =====================================================
-# FORGOT PASSWORD - UPDATE PASSWORD
-# =====================================================
 
-def update_user_password(email, new_password):
+# =========================================================
+# LOGIN AND PASSWORD RESET OTP FUNCTIONS
+# =========================================================
+
+def save_email_otp(email, purpose, otp_hash, expires_at):
     """
-    Update a user's password securely using bcrypt.
-    The caller must verify the password-reset OTP first.
+    Save login or password-reset OTP.
+
+    Correct argument order:
+    email, purpose, otp_hash, expires_at
     """
 
-    email = email.strip().lower()
+    email = normalize_email(email)
 
-    if not new_password or len(new_password) < 6:
-        return False
+    allowed_purposes = (
+        "login",
+        "password_reset"
+    )
 
-    if len(new_password) > 72:
+    if purpose not in allowed_purposes:
+        print("[SAVE EMAIL OTP ERROR] Invalid OTP purpose")
         return False
 
     try:
-        # Hash the new password before saving it.
-        password_hash = bcrypt.hashpw(
-            new_password.encode("utf-8"),
-            bcrypt.gensalt()
-        ).decode("utf-8")
+        now = datetime.now(timezone.utc)
+
+        email_otps_collection.update_one(
+            {
+                "email": email,
+                "purpose": purpose
+            },
+            {
+                "$set": {
+                    "email": email,
+                    "otp_hash": otp_hash,
+                    "purpose": purpose,
+                    "expires_at": expires_at,
+                    "attempts": 0,
+                    "created_at": now
+                }
+            },
+            upsert=True
+        )
+
+        print(f"[OTP] {purpose} OTP saved successfully.")
+
+        return True
+
+    except Exception as error:
+        print("[SAVE EMAIL OTP ERROR]", type(error).__name__)
+        return False
+
+
+def get_email_otp(email, purpose):
+    return email_otps_collection.find_one({
+        "email": normalize_email(email),
+        "purpose": purpose
+    })
+
+
+def increment_email_otp_attempts(email, purpose):
+    email = normalize_email(email)
+
+    email_otps_collection.update_one(
+        {
+            "email": email,
+            "purpose": purpose
+        },
+        {
+            "$inc": {"attempts": 1}
+        }
+    )
+
+    record = get_email_otp(email, purpose)
+
+    return record.get("attempts", 0) if record else 0
+
+
+def delete_email_otp(email, purpose):
+    result = email_otps_collection.delete_one({
+        "email": normalize_email(email),
+        "purpose": purpose
+    })
+
+    return result.deleted_count > 0
+
+
+# =========================================================
+# PASSWORD FUNCTIONS
+# =========================================================
+
+def update_user_password(email, new_password):
+    """
+    Update password only for an existing verified account.
+    """
+
+    email = normalize_email(email)
+
+    try:
+        password_hash = hash_password(new_password)
 
         result = users_collection.update_one(
             {
@@ -835,11 +440,195 @@ def update_user_password(email, new_password):
             }
         )
 
-        return result.modified_count == 1
+        return result.matched_count == 1
 
     except Exception as error:
-        print("[PASSWORD UPDATE ERROR]", error)
+        print("[PASSWORD UPDATE ERROR]", type(error).__name__)
         return False
+
+
+# =========================================================
+# CONVERSATION FUNCTIONS
+# =========================================================
+
+def create_conversation(user_id, title="New Chat"):
+    now = datetime.now(timezone.utc)
+
+    document = {
+        "user_id": ObjectId(user_id),
+        "title": title,
+        "created_at": now,
+        "updated_at": now
+    }
+
+    result = conversations_collection.insert_one(document)
+
+    return str(result.inserted_id)
+
+
+def get_user_conversation(conversation_id, user_id):
+    try:
+        return conversations_collection.find_one({
+            "_id": ObjectId(conversation_id),
+            "user_id": ObjectId(user_id)
+        })
+
+    except Exception:
+        return None
+
+
+def get_conversations(user_id):
+    conversations = (
+        conversations_collection
+        .find({"user_id": ObjectId(user_id)})
+        .sort("updated_at", DESCENDING)
+    )
+
+    result = []
+
+    for conversation in conversations:
+        result.append({
+            "id": str(conversation["_id"]),
+            "title": conversation.get("title", "New Chat"),
+            "created_at": format_datetime(
+                conversation.get("created_at")
+            ),
+            "updated_at": format_datetime(
+                conversation.get("updated_at")
+            )
+        })
+
+    return result
+
+
+def delete_conversation(conversation_id, user_id):
+    conversation = get_user_conversation(
+        conversation_id,
+        user_id
+    )
+
+    if not conversation:
+        return False
+
+    object_id = ObjectId(conversation_id)
+
+    conversations_collection.delete_one({
+        "_id": object_id,
+        "user_id": ObjectId(user_id)
+    })
+
+    messages_collection.delete_many({
+        "conversation_id": object_id
+    })
+
+    return True
+
+def clear_conversation_messages(conversation_id, user_id):
+    conversation = get_user_conversation(conversation_id, user_id)
+
+    if not conversation:
+        return False
+
+    object_id = ObjectId(conversation_id)
+
+    messages_collection.delete_many({
+        "conversation_id": object_id
+    })
+
+    conversations_collection.update_one(
+        {
+            "_id": object_id,
+            "user_id": ObjectId(user_id)
+        },
+        {
+            "$set": {
+                "title": "New Chat",
+                "updated_at": datetime.now(timezone.utc)
+            }
+        }
+    )
+
+    return True
+def update_conversation_title(conversation_id, user_id, title):
+    conversation = get_user_conversation(
+        conversation_id,
+        user_id
+    )
+
+    if not conversation:
+        return False
+
+    result = conversations_collection.update_one(
+        {
+            "_id": ObjectId(conversation_id),
+            "user_id": ObjectId(user_id)
+        },
+        {
+            "$set": {
+                "title": title,
+                "updated_at": datetime.now(timezone.utc)
+            }
+        }
+    )
+
+    return result.matched_count == 1
+
+
+# =========================================================
+# MESSAGE FUNCTIONS
+# =========================================================
+
+def add_message(conversation_id, role, message):
+    now = datetime.now(timezone.utc)
+
+    conversation_object_id = ObjectId(conversation_id)
+
+    document = {
+        "conversation_id": conversation_object_id,
+        "role": role,
+        "message": message,
+        "created_at": now
+    }
+
+    result = messages_collection.insert_one(document)
+
+    conversations_collection.update_one(
+        {"_id": conversation_object_id},
+        {
+            "$set": {
+                "updated_at": now
+            }
+        }
+    )
+
+    return str(result.inserted_id)
+
+
+def get_messages(conversation_id):
+    messages = (
+        messages_collection
+        .find({
+            "conversation_id": ObjectId(conversation_id)
+        })
+        .sort("created_at", 1)
+    )
+
+    result = []
+
+    for message in messages:
+        result.append({
+            "id": str(message["_id"]),
+            "conversation_id": str(message["conversation_id"]),
+            "role": message.get("role"),
+            "message": message.get("message", ""),
+            "image_url": message.get("image_url"),
+            "created_at": format_datetime(
+                message.get("created_at")
+            )
+        })
+
+    return result
+
 
 # =========================================================
 # ANONYMOUS VISITOR CHAT FUNCTIONS
@@ -866,6 +655,7 @@ def get_visitor_conversation(conversation_id, visitor_id):
             "_id": ObjectId(conversation_id),
             "visitor_id": visitor_id
         })
+
     except Exception:
         return None
 
@@ -896,7 +686,8 @@ def get_visitor_conversations(visitor_id):
 
 def delete_visitor_conversation(conversation_id, visitor_id):
     conversation = get_visitor_conversation(
-        conversation_id, visitor_id
+        conversation_id,
+        visitor_id
     )
 
     if not conversation:
@@ -917,16 +708,19 @@ def delete_visitor_conversation(conversation_id, visitor_id):
 
 
 def update_visitor_conversation_title(
-    conversation_id, visitor_id, title
+    conversation_id,
+    visitor_id,
+    title
 ):
     conversation = get_visitor_conversation(
-        conversation_id, visitor_id
+        conversation_id,
+        visitor_id
     )
 
     if not conversation:
         return False
 
-    conversations_collection.update_one(
+    result = conversations_collection.update_one(
         {
             "_id": ObjectId(conversation_id),
             "visitor_id": visitor_id
@@ -939,95 +733,4 @@ def update_visitor_conversation_title(
         }
     )
 
-    return True
-
-# =========================================================
-# INGRES SECRET ID ACCOUNT SYSTEM
-# =========================================================
-
-import secrets
-import hashlib
-
-
-def generate_secret_id():
-    """Generate a unique INGRES Secret ID."""
-
-    while True:
-        secret_id = "ING-" + secrets.token_hex(6).upper()
-
-        secret_hash = hashlib.sha256(
-            secret_id.encode("utf-8")
-        ).hexdigest()
-
-        existing = users_collection.find_one({
-            "secret_id_hash": secret_hash
-        })
-
-        if not existing:
-            return secret_id
-
-
-def create_secret_id_user(name):
-    """Create a new account using the user's name."""
-
-    name = name.strip()
-
-    if not name or len(name) > 100:
-        return None
-
-    secret_id = generate_secret_id()
-
-    secret_hash = hashlib.sha256(
-        secret_id.encode("utf-8")
-    ).hexdigest()
-
-    now = datetime.now(timezone.utc)
-
-    user_document = {
-        "name": name,
-        "secret_id_hash": secret_hash,
-        "login_method": "secret_id",
-        "created_at": now,
-        "updated_at": now
-    }
-
-    try:
-        result = users_collection.insert_one(user_document)
-
-        return {
-            "user_id": str(result.inserted_id),
-            "name": name,
-            "secret_id": secret_id
-        }
-
-    except Exception as error:
-        print("[SECRET ID ACCOUNT ERROR]", error)
-        return None
-
-
-def login_with_secret_id(name, secret_id):
-    """Find an account using name and Secret ID."""
-
-    name = name.strip()
-    secret_id = secret_id.strip().upper()
-
-    if not name or not secret_id:
-        return None
-
-    secret_hash = hashlib.sha256(
-        secret_id.encode("utf-8")
-    ).hexdigest()
-
-    user = users_collection.find_one({
-        "name": name,
-        "secret_id_hash": secret_hash,
-        "login_method": "secret_id"
-    })
-
-    if not user:
-        return None
-
-    return {
-        "user_id": str(user["_id"]),
-        "name": user["name"]
-    }
+    return result.matched_count == 1
