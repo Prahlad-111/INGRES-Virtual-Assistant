@@ -1,24 +1,19 @@
-﻿import os
-import smtplib
-from email.message import EmailMessage
-from email.utils import formataddr
+import os
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
 def send_otp_email(receiver_email, otp, purpose="verification"):
-    """Send OTP emails using Brevo SMTP."""
+    """Send OTP emails using Brevo's HTTP API."""
 
-    smtp_host = os.getenv("BREVO_SMTP_HOST")
-    smtp_port = int(os.getenv("BREVO_SMTP_PORT", "587"))
-    smtp_login = os.getenv("BREVO_SMTP_LOGIN")
-    smtp_key = os.getenv("BREVO_SMTP_KEY")
+    api_key = os.getenv("BREVO_API_KEY")
     sender_email = os.getenv("BREVO_SENDER_EMAIL")
     sender_name = os.getenv("BREVO_SENDER_NAME", "INGRES AI")
 
-    if not all([smtp_host, smtp_login, smtp_key, sender_email]):
-        raise RuntimeError("Brevo SMTP configuration is incomplete.")
+    if not all([api_key, sender_email]):
+        raise RuntimeError("Brevo API configuration is incomplete.")
 
     # Select email subject and heading
     if purpose == "login":
@@ -36,14 +31,7 @@ def send_otp_email(receiver_email, otp, purpose="verification"):
         heading = "Verify Your Email"
         description = "Your INGRES AI email verification code is:"
 
-    message = EmailMessage()
-
-    message["Subject"] = subject
-    message["From"] = formataddr((sender_name, sender_email))
-    message["To"] = receiver_email
-
-    message.set_content(
-        f"""Hello,
+    text_content = f"""Hello,
 
 {description}
 
@@ -56,10 +44,8 @@ If you did not request this code, please ignore this email.
 Regards,
 INGRES AI Team
 """
-    )
 
-    message.add_alternative(
-        f"""
+    html_content = f"""
         <html>
         <body>
             <h2>{heading}</h2>
@@ -71,20 +57,39 @@ INGRES AI Team
             <p>Regards,<br>INGRES AI Team</p>
         </body>
         </html>
-        """,
-        subtype="html"
-    )
+        """
 
     try:
-        with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
-            server.starttls()
-            server.login(smtp_login, smtp_key)
-            server.send_message(message)
+        response = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={
+                "api-key": api_key,
+                "accept": "application/json",
+                "content-type": "application/json",
+            },
+            json={
+                "sender": {
+                    "name": sender_name,
+                    "email": sender_email,
+                },
+                "to": [{"email": receiver_email}],
+                "subject": subject,
+                "textContent": text_content,
+                "htmlContent": html_content,
+            },
+            timeout=20,
+        )
+        response.raise_for_status()
 
-        print(f"[BREVO] {purpose} OTP email sent successfully.")
+        print(f"[BREVO API] {purpose} OTP email sent successfully.")
 
         return True
 
-    except (smtplib.SMTPException, OSError) as error:
-        print("[BREVO EMAIL ERROR]:", type(error).__name__)
+    except requests.RequestException as error:
+        status_code = (
+            error.response.status_code
+            if error.response is not None
+            else "connection error"
+        )
+        print("[BREVO API ERROR]:", status_code)
         raise RuntimeError("Unable to send OTP email.") from error
