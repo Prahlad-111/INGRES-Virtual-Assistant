@@ -32,10 +32,6 @@ from preprocessing.text_preprocessing import preprocess_text
 
 from chatbot.responses import get_responses
 
-from services.location_service import get_location_response
-
-from services.ingres_service import get_groundwater_information
-
 from services.ai_service import ask_gemini
 
 
@@ -267,7 +263,7 @@ GREETING_MESSAGES = {
 
 
 # =========================================================
-# GENERAL INGRES QUESTIONS
+# GENERAL ASSISTANT QUESTIONS
 # =========================================================
 
 WHAT_IS_INGRES_MESSAGES = {
@@ -362,12 +358,11 @@ def get_response(
 
 
     # =====================================================
-    # 0.1 WHAT IS INGRES
+    # 0.1 WHAT IS THE ASSISTANT
     # =====================================================
 
-    # This must be handled before ML and groundwater
-    # detection so that "what is INGRES" gets a normal
-    # virtual-assistant explanation.
+    # This must be handled before ML so that "what is INGRES"
+    # gets a normal virtual-assistant explanation.
 
     if normalized_message in WHAT_IS_INGRES_MESSAGES:
 
@@ -428,143 +423,7 @@ def get_response(
 
 
     # =====================================================
-    # 2. INGRES / GROUNDWATER DATA
-    # =====================================================
-
-    """
-    IMPORTANT:
-
-    Groundwater processing should happen ONLY when the
-    user is actually asking about groundwater-related
-    information.
-
-    We intentionally DO NOT use very broad words such as:
-
-        resource
-        data
-        category
-        status
-        assessment
-
-    by themselves because they can appear in normal
-    questions and cause incorrect groundwater replies.
-    """
-
-    try:
-
-        location_result = get_location_response(
-            user_message
-        )
-
-
-        if location_result:
-
-            if location_result.get(
-                "location_found"
-            ):
-
-                state = location_result.get(
-                    "state"
-                )
-
-
-                # -------------------------------------------------
-                # ONLY SPECIFIC GROUNDWATER KEYWORDS
-                # -------------------------------------------------
-
-                groundwater_keywords = [
-
-                    "groundwater",
-
-                    "ground water",
-
-                    "groundwater level",
-
-                    "ground water level",
-
-                    "groundwater recharge",
-
-                    "ground water recharge",
-
-                    "groundwater extraction",
-
-                    "ground water extraction",
-
-                    "groundwater resource",
-
-                    "ground water resource",
-
-                    "groundwater resources",
-
-                    "ground water resources",
-
-                    "groundwater assessment",
-
-                    "ground water assessment",
-
-                    "groundwater data",
-
-                    "ground water data",
-
-                    "aquifer",
-
-                    "aquifers",
-
-                    "water table",
-
-                    "groundwater status",
-
-                    "ground water status",
-
-                    "groundwater category",
-
-                    "ground water category",
-
-                    "safe groundwater",
-
-                    "critical groundwater",
-
-                    "over exploited groundwater",
-
-                    "over-exploited groundwater"
-
-                ]
-
-
-                lower_message = (
-                    user_message.lower()
-                )
-
-
-                # -------------------------------------------------
-                # CHECK FOR ACTUAL GROUNDWATER QUESTION
-                # -------------------------------------------------
-
-                if any(
-                    keyword in lower_message
-                    for keyword in groundwater_keywords
-                ):
-
-                    print(
-                        f"[ROUTER] INGRES Groundwater Data → {state}"
-                    )
-
-
-                    return get_groundwater_information(
-                        state
-                    )
-
-
-    except Exception as error:
-
-        print(
-            "[INGRES ERROR]",
-            error
-        )
-
-
-    # =====================================================
-    # 3. ML INTENT CLASSIFICATION
+    # 2. ML INTENT CLASSIFICATION
     # =====================================================
 
     try:
@@ -641,11 +500,10 @@ def get_response(
 
 
     # =====================================================
-    # 4. GROQ AI
+    # 3. GROQ AI
     # =====================================================
 
-    # Anything not handled by calculator, specific
-    # groundwater logic, or ML goes to Groq.
+    # Anything not handled by calculator or ML goes to Groq.
 
     print(
         "[ROUTER] Groq AI"

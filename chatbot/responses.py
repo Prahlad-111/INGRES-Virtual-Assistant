@@ -43,5 +43,5 @@ def get_responses(intent):
 
     return responses.get(
         intent,
-        ["I'm sorry, I don't have an answer for that."]
+        []
     )
