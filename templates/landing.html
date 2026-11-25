@@ -5,46 +5,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>INGRES AI | Virtual Assistant</title>
-
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/landing.css') }}">
+    <meta name="theme-color" content="#080d20">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
 </head>
 <body>
-
-    <nav class="navbar">
+    <nav class="navbar" aria-label="Main navigation">
         <a href="/" class="logo">INGRES<span>AI</span></a>
-
         <div class="nav-links">
-            <a href="#features">Features</a>
-            <a href="#about">About</a>
-            <a href="/chat" class="nav-register">Start Chatting</a>
+            <button class="theme-toggle" type="button" aria-label="Switch to light mode">
+                <span class="theme-icon" aria-hidden="true">☾</span>
+            </button>
         </div>
     </nav>
 
     <main class="hero">
         <div class="hero-content">
             <div class="tag">YOUR INTELLIGENT AI ASSISTANT</div>
-
             <h1>
                 Ask Anything.<br>
                 <span>Discover More.</span>
             </h1>
-
             <p>
                 Welcome to INGRES AI Virtual Assistant.
                 Get intelligent answers, explore information,
                 and solve problems through a simple conversation.
             </p>
-
-            <div class="hero-buttons">
-                <a href="/chat" class="primary-btn" id="start-button">
-                    Start Chatting →
-                </a>
-                <a href="#features" class="secondary-btn">
-                    Explore Features
-                </a>
-            </div>
-
             <div class="trust-text">
                 <span>✦</span> Smart Conversations
                 <span>✦</span> Easy to Use
@@ -53,8 +38,6 @@
         </div>
 
         <div class="hero-visual">
-            <div class="glow"></div>
-
             <div class="ai-card">
                 <div class="card-top">
                     <div class="ai-icon">✦</div>
@@ -64,28 +47,25 @@
                     </div>
                     <span class="online-dot"></span>
                 </div>
-
                 <div class="chat-preview">
                     <div class="bot-message">
                         Hello! 👋<br>
                         I'm INGRES AI. How can I help you today?
                     </div>
-
                     <div class="user-message">
                         Tell me something interesting.
                     </div>
-
                     <div class="bot-message">
                         Absolutely! Ask me anything and let's explore
                         something new together.
                     </div>
                 </div>
-
                 <div class="fake-input">
                     <span>Ask INGRES AI anything...</span>
                     <span class="send-icon">➤</span>
                 </div>
             </div>
+            <a href="/chat" class="hero-chat-btn">Start Chatting <span>→</span></a>
         </div>
     </main>
 
@@ -93,41 +73,71 @@
         <div class="section-heading">
             <span>WHAT YOU CAN DO</span>
             <h2>Explore the possibilities</h2>
+            <p>From quick answers to deep insights, INGRES AI is here to help.</p>
         </div>
-
         <div class="feature-grid">
             <div class="feature-card">
-                <div class="feature-icon">✦</div>
+                <div class="feature-icon chat-icon" aria-hidden="true">
+                    <span class="bubble bubble-main"></span>
+                    <span class="bubble bubble-side"></span>
+                </div>
                 <h3>AI Conversations</h3>
                 <p>Ask questions and receive helpful AI-generated responses.</p>
+                <span class="feature-arrow">→</span>
             </div>
-
             <div class="feature-card">
-                <div class="feature-icon">⌕</div>
+                <div class="feature-icon">ϟ</div>
                 <h3>Smart Assistance</h3>
                 <p>Explore information and get assistance with different topics.</p>
+                <span class="feature-arrow">→</span>
             </div>
-
             <div class="feature-card">
                 <div class="feature-icon">◷</div>
                 <h3>Chat History</h3>
                 <p>Continue your previous conversations with saved chat history.</p>
+                <span class="feature-arrow">→</span>
             </div>
         </div>
     </section>
 
     <section class="about" id="about">
-        <h2>Meet your intelligent assistant.</h2>
-        <p>
-            INGRES AI brings AI-powered assistance into one simple
-            and user-friendly platform.
-        </p>
-        <a href="/chat" class="primary-btn">Start Chatting →</a>
+        <div class="robot" aria-hidden="true">
+            <div class="robot-halo"></div>
+            <div class="robot-antenna"><span></span></div>
+            <div class="robot-head">
+                <span class="robot-eye left"></span>
+                <span class="robot-eye right"></span>
+                <span class="robot-mouth">•••</span>
+            </div>
+            <div class="robot-ear left"></div>
+            <div class="robot-ear right"></div>
+            <div class="robot-body">
+                <span class="robot-core"></span>
+            </div>
+            <div class="robot-arm left"></div>
+            <div class="robot-arm right"></div>
+        </div>
+        <div class="about-copy">
+            <h2>Meet Your <span>Intelligent Assistant.</span></h2>
+            <p>
+                INGRES AI brings AI-powered assistance into one simple
+                and user-friendly platform.
+            </p>
+        </div>
     </section>
 
-    <footer>
-        © 2026 INGRES AI Virtual Assistant. All rights reserved.
-    </footer>
+    <footer>© 2026 INGRES AI Virtual Assistant. All rights reserved.</footer>
 
+    <script>
+        const themeToggle = document.querySelector('.theme-toggle');
+        const themeIcon = document.querySelector('.theme-icon');
+
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-theme');
+            const isLight = document.body.classList.contains('light-theme');
+            themeIcon.textContent = isLight ? '☀' : '☾';
+            themeToggle.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+        });
+    </script>
 </body>
 </html>
